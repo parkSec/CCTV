@@ -62,6 +62,10 @@ def cfg(tmp_path):
     c["num_samples"] = 10
     c["timing"]["warmup"] = 1
     c["output"]["save_samples"] = 2
+    # 가중치가 PC에 있든 없든 같은 결과가 나오도록, 딥러닝 기법은 없는 경로를 가리키게 한다
+    for cond in c["conditions"]:
+        if "weights" in cond:
+            cond["weights"] = tmp_path / "missing.pth"
     return c
 
 

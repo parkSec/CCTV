@@ -136,3 +136,11 @@
 - 문제: 저장소 파일 20,006개를 하나씩 받아 예상 1시간 이상 소요
 - 수정: 변환에 필요한 `samples.json`, `metadata.json`, `fiftyone.yml`, `data/*`만 받도록 제한(`fields/` 제외), 동시 다운로드 8 → 32개. 다시 실행하면 이미 받은 파일은 건너뜀
 - 테스트: `test_download_skips_unneeded_files` 실패 확인 → 통과. 전체 72개 통과, 5개 skip
+
+### 사용자 PC 첫 테스트 결과와 수정
+- PC(Python 3.11.9, RTX 3070)에서 `pytest`: 73개 통과, 2개 실패, 2개 skip(패키지가 없을 때만 도는 테스트라 정상)
+- 확인된 것: 스모크 테스트 안에서 Zero-DCE++ 공식 가중치(Epoch99.pth)가 strict 로드에 성공하고 Real-ESRGAN도 실제로 실행됨 → Zero-DCE++ 네트워크 구조가 공식과 일치함을 확인
+- 실패 원인: `test_build_enhancers_expands_sweep`, `test_smoke_run`이 "가중치가 없어 딥러닝 기법은 건너뛴다"는 전제로 작성돼 있었는데, PC에는 가중치가 있어 조건이 2개 더 생김 (코드 문제 아님, 테스트가 환경에 의존)
+- 수정: 두 테스트에서 딥러닝 기법의 가중치 경로를 일부러 없는 경로로 바꿔, 가중치 유무와 상관없이 같은 결과가 나오게 함
+- 수정: 공식 RealESRGANer가 이미지마다 출력하는 `Tile 1/1` 메시지를 숨김 (PC 로그에서 확인됨). 테스트 `test_no_tile_progress_output` 추가(PC에서 실행)
+- 데이터 확인: BDD100K HF 사본 변환 결과 전체 10,000장, 야간 3,929장 — 논문에 나온 공식 검증 세트 야간 수(3,929)와 일치

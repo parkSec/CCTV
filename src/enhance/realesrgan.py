@@ -6,7 +6,9 @@
 """
 from __future__ import annotations
 
+import contextlib
 import importlib
+import io
 import sys
 from pathlib import Path
 from typing import Any, Callable
@@ -87,7 +89,9 @@ class RealESRGANEnhancer(Enhancer):
 
     def _run(self, img: np.ndarray, tile: int) -> np.ndarray:
         self.upsampler.tile_size = tile
-        out, _ = self.upsampler.enhance(img, outscale=self.scale)
+        # 공식 구현이 타일마다 'Tile i/n'을 print하므로 숨긴다
+        with contextlib.redirect_stdout(io.StringIO()):
+            out, _ = self.upsampler.enhance(img, outscale=self.scale)
         return out
 
     def enhance(self, img: np.ndarray) -> np.ndarray:
