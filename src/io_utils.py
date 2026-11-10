@@ -7,6 +7,29 @@ import platform
 from pathlib import Path
 
 
+def relativize_paths(obj, root: Path, home: Path | None = None):
+    """결과 파일에 사용자 이름이 담긴 절대 경로가 남지 않도록 경로를 바꾼다.
+    프로젝트 안 경로 → 프로젝트 기준 상대 경로, 홈 폴더 안 경로 → '~/...', 나머지는 그대로."""
+    home = Path.home() if home is None else home
+    if isinstance(obj, dict):
+        return {k: relativize_paths(v, root, home) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [relativize_paths(v, root, home) for v in obj]
+    if isinstance(obj, Path):
+        for base, prefix in ((Path(root), ""), (Path(home), "~/")):
+            try:
+                return prefix + obj.relative_to(base).as_posix()
+            except ValueError:
+                continue
+        return str(obj)
+    if isinstance(obj, str):
+        # 문장 속 경로: 프로젝트 경로를 먼저 지우고(프로젝트가 홈 안에 있을 수 있으므로), 그다음 홈을 '~'로
+        for base, repl in ((str(root), "."), (str(home), "~")):
+            obj = obj.replace(base, repl)
+        return obj
+    return obj
+
+
 def _default(o):
     if isinstance(o, Path):
         return str(o)

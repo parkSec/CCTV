@@ -23,3 +23,9 @@ def test_requirements_use_official_realesrgan():
 def test_requirements_include_hf_downloader():
     """scripts/download_bdd100k_hf.py가 huggingface_hub를 쓴다."""
     assert "huggingface_hub" in _requirement_names()
+
+
+def test_gitignore_excludes_logs_and_weights():
+    """로그(사용자 경로가 찍힘)와 가중치 파일(용량 큼)은 저장소에 올리지 않는다."""
+    lines = (PROJECT_ROOT / ".gitignore").read_text(encoding="utf-8").split()
+    assert "*.log" in lines and "pytest_log.txt" in lines and "*.pt" in lines and "*.pth" in lines

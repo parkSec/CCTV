@@ -6,4 +6,9 @@ weights/
 results/
 runs/
 .venv/
-docs/
+# 로그에는 사용자 이름이 담긴 경로가 찍히므로 올리지 않는다
+*.log
+pytest_log.txt
+# 모델 가중치 (ultralytics가 프로젝트 루트에 받는 yolo26s.pt 포함)
+*.pt
+*.pth
