@@ -1,0 +1,138 @@
+# 작업 기록 (work_history)
+
+> 이 파일은 아래로 추가만 합니다. 기존 내용은 수정·삭제하지 않습니다.
+
+---
+
+## 2026-11-10 — 설계와 계획
+
+- 제안서(hwpx) 분석 → 설계 결정: 구조 A(배치 실험 + 결과 뷰어), YOLO26, 기법 4종(Gamma/CLAHE/Zero-DCE++/Real-ESRGAN), 데이터셋 BDD100K 야간 + ExDark(AI Hub는 보류)
+- 스펙: `docs/superpowers/specs/2026-11-10-lowlight-detection-design.md`
+- 계획: `docs/superpowers/plans/2026-11-10-lowlight-detection.md` (Phase 1~4, Task 1~14)
+
+---
+
+## Phase 1 (11주차): 골격 · 데이터 · 지표 · 기본 기법 · 실험 러너
+
+### Task 1: 프로젝트 골격과 설정 로더 — 완료
+- 추가: `configs/default.yaml`, `src/config.py`(load_config, PROJECT_ROOT, ConfigError), `requirements.txt`, `.gitignore`, `README.md`, `pytest.ini`
+- 상대 경로 키(labels_json, images_dir, annos_dir, weights, root)는 프로젝트 루트 기준 절대 경로로 변환
+- 테스트: `tests/test_config.py` 3개 통과
+
+### Task 2: 공통 클래스 · Sample · BDD100K 로더 — 완료
+- 추가: `src/data/classes.py`(COMMON_CLASSES, COCO/BDD/ExDark 매핑), `src/data/base.py`(Sample, DetectionDataset, select_samples), `src/data/bdd100k.py`
+- BDD 2018 라벨(person/bike/motor)과 det_20 라벨(pedestrian/bicycle/motorcycle)을 모두 같은 클래스로 매핑
+- `labels` 키가 없는 이미지는 GT 0개로 처리, box2d 없는 라벨(차선·주행영역)은 무시
+- 표본 추출은 image_id 정렬 후 seed 고정 → 입력 순서와 무관하게 동일
+- 테스트: `tests/test_bdd100k.py` 7개 통과
+
+### Task 3: ExDark 로더 — 완료
+- 추가: `src/data/exdark.py`(ExDarkDataset, parse_bbgt)
+- bbGt `l t w h` → xyxy 변환, People/Bicycle/Car/Motorbike/Bus만 사용
+- 라벨 파일은 소문자 이름으로 색인해서 `a.JPG` ↔ `a.jpg.txt` 같은 대소문자 차이를 흡수
+- 라벨 파일이 없거나 평가 클래스 박스가 0개인 이미지는 제외
+- 결정: image_id는 `<클래스 폴더>/<파일명>` (폴더가 달라도 id가 겹치지 않게)
+- 테스트: `tests/test_exdark.py` 5개 통과
+
+### Task 4: 박스 매칭과 지표 — 완료
+- 추가: `src/eval/matching.py`(box_iou, match_image), `src/eval/metrics.py`(ImageRecord, filter_to_classes, average_precision, compute_metrics)
+- 매칭: 같은 클래스 + IoU ≥ 0.5, 점수 내림차순 그리디, 정답 1개당 1번
+- P/R/F1은 conf ≥ 0.25 예측만, AP@0.5는 전체 점수 범위(all-point 보간). `all`은 micro P/R/F1 + GT 있는 클래스의 mAP
+- 평가 클래스 밖의 예측(예: ExDark에서 truck)은 FP로 세지 않음. GT 없는 이미지의 예측은 전부 FP
+- 테스트: `tests/test_matching.py` 9개, `tests/test_metrics.py` 9개 통과 (AP 손계산 값 0.8333 검증 포함)
+
+### Task 5: Enhancer 인터페이스 · Gamma · CLAHE · 레지스트리 — 완료
+- 추가: `src/enhance/base.py`(Enhancer, IdentityEnhancer, EnhancerUnavailable), `gamma.py`(LUT 방식), `clahe.py`(LAB의 L 채널만), `registry.py`(build_enhancers)
+- 설정의 sweep 값마다 조건 1개 생성 → 현재 7개 조건(original, gamma 3, clahe 3)
+- Zero-DCE++, Real-ESRGAN은 Phase 2 전까지 "not implemented yet" 사유로 skipped 목록에 들어감
+- 테스트: `tests/test_enhance.py` 9개 통과
+
+### Task 6: 탐지기 래퍼 (YOLO26) — 완료 (GPU 스모크 테스트는 사용자 PC에서)
+- 추가: `src/detect/base.py`(Detections, Detector), `src/detect/yolo.py`(coco_to_common, YoloDetector)
+- COCO 클래스 중 person/bicycle/car/motorcycle/bus/truck만 남기고 공통 id로 변환
+- CUDA가 없으면 경고 후 CPU로 실행
+- 결정: `weights/yolo26s.pt` 파일이 없으면 이름만 넘겨 ultralytics가 공식 가중치를 자동 다운로드
+- 테스트: `tests/test_detect.py` 2개 통과, `test_yolo_smoke`는 ultralytics 없는 환경이라 skip (사용자 PC에서 실행)
+
+### Task 7: 시간 측정 · 결과 저장 · 실험 러너 — 완료
+- 추가: `src/timing.py`(timed, summarize_ms, cuda_sync), `src/io_utils.py`(CSV/JSON/JSONL 저장, collect_env), `scripts/run_experiment.py`
+- 결과 폴더 `results/<run_id>/`: metrics.csv, timing.csv, per_image.jsonl, run_meta.json, samples/
+- 데이터셋 경로가 없으면 실험 시작 전에 경로를 알려 주고 중단. 읽을 수 없는 이미지와 처리 중 오류가 난 이미지는 `excluded_images`에 기록하고 계속 진행
+- 화질 개선 시간과 탐지 시간을 따로 측정, 조건마다 워밍업, GPU 사용 시 CUDA 동기화
+- CSV는 utf-8-sig로 저장해 엑셀에서 한글이 깨지지 않음
+- 테스트: `tests/test_timing.py` 4개, `tests/test_run_experiment.py` 3개 통과
+
+### Phase 1 최종 점검 — 수정 1건
+- 발견: Windows의 `cv2.imread`/`cv2.imwrite`는 한글 경로(`바탕 화면`)를 처리하지 못해, 그대로 두면 모든 이미지가 "읽을 수 없음"으로 제외됨
+- 수정: `src/imageio.py`(read_image, write_image) 추가 — 바이트로 읽고 `cv2.imdecode`/`imencode`로 처리. 러너가 이 함수를 쓰도록 변경
+- 테스트: `test_unicode_path_images_still_read` (cv2.imread가 실패하는 상황을 흉내) 실패 확인 → 수정 후 통과
+- 전체 테스트: 52개 통과, 1개 skip(`test_yolo_smoke`, ultralytics 필요)
+
+### Phase 1 요약
+- 완료: Task 1~7. Gamma 3 + CLAHE 3 + 원본 = 7개 조건으로 실험 가능
+- 남은 확인(사용자 PC): `pip install -r requirements.txt` → `pytest` → 데이터 배치 후 `python -m scripts.run_experiment --num-samples 20`
+- 다음: Phase 2 (Zero-DCE++, Real-ESRGAN)
+
+---
+
+## Phase 2 (12주차): 딥러닝 화질 개선 기법
+
+### Task 8: Zero-DCE++ — 코드 완료, 실제 모델 실행 확인은 사용자 PC에서
+- 추가: `src/enhance/zerodce.py`(ZeroDCEPPNet, ZeroDCEEnhancer, pad_to_multiple), `registry.py`에 연결
+- 네트워크는 공식 구현과 같은 모듈 이름(e_conv1~7, depth_conv/point_conv)으로 작성 → 공식 Epoch99.pth를 그대로 로드. 파라미터 수 계산값 10,561개로 논문의 "약 10K"와 일치(PC 테스트로 확인 예정)
+- 가중치 구조가 맞지 않으면 실험을 멈추지 않고 이유를 남기고 건너뜀
+- 결정: H·W가 scale_factor 배수가 아니면 공식 코드처럼 잘라내지 않고 가장자리로 채운 뒤 원래 크기로 되돌림 (탐지기 입력 크기를 모든 조건에서 같게 유지하기 위해)
+- 결정: scale_factor는 스펙대로 1 (논문 기본값은 12로 더 빠르지만 품질이 낮을 수 있음. 설정에서 바꿀 수 있음)
+- 테스트: 여기서 4개 통과, PyTorch가 필요한 3개(출력 크기, scale 12, 파라미터 수)는 PC에서 실행
+
+### Task 9: Real-ESRGAN — 코드 완료, 실제 모델 실행 확인은 사용자 PC에서
+- 추가: `src/enhance/realesrgan.py`(RealESRGANEnhancer, run_with_tile_retry, patch_torchvision_functional_tensor), `registry.py`에 연결
+- RealESRGAN_x2plus(RRDBNet 23블록)로 2배 업스케일 → `cv2.INTER_AREA`로 원래 크기 복원
+- GPU 메모리 부족 시 타일 400 → 200 → … 로 줄여 재시도(최소 128), 줄인 값은 다음 이미지에도 유지
+- 호환 패치: torchvision 0.17부터 `functional_tensor` 모듈이 없어져 basicsr import가 실패하는 알려진 문제 → `functional`을 그 이름으로 등록
+- 테스트: 여기서 6개 통과(타일 재시도 3, 호환 패치 1, 가중치·패키지 없음 2), 실제 업스케일 1개는 PC에서
+
+### Phase 2 점검 — 수정 1건 (Phase 1에서 미뤄 둔 항목)
+- 문제: 어떤 기법이 워밍업 단계에서 오류를 내면(예: GPU 오류, 가중치 문제) 실험 전체가 멈춤
+- 수정: 워밍업 실패 시 그 데이터셋의 그 조건만 건너뛰고, `skipped_conditions`에 데이터셋 이름과 오류 내용을 기록한 뒤 다음 조건으로 진행
+- 테스트: `test_condition_failing_at_warmup_is_skipped` 실패 확인 → 수정 후 통과
+
+### Task 10: 가중치 안내 — 문서 완료, 전체 실험은 사용자 PC에서
+- 추가: `scripts/download_weights.md`(가중치 3종의 공식 출처와 확인 방법), README 가중치 항목 갱신
+- `configs/default.yaml`의 scale_factor 옆에 논문 기본값(12) 메모
+- 전체 테스트: 63개 통과, 5개 skip(PyTorch·realesrgan·ultralytics가 필요한 테스트 → PC에서 실행)
+
+### Phase 2 요약
+- 완료: 9개 조건(원본, Gamma 3, CLAHE 3, Zero-DCE++, Real-ESRGAN) 실험 코드
+- 남은 확인(사용자 PC): 가중치 2개 받기 → `pytest` 전체 통과 확인(skip 0개 목표) → `python -m scripts.run_experiment` 전체 실행 → `skipped_conditions`가 비어 있는지 확인
+- 다음: Phase 3 (비교 영상, Streamlit 웹 화면)
+
+### 수정: requirements.txt 설치 오류 (Windows)
+- 문제: `pip install -r requirements.txt`가 `UnicodeDecodeError: 'cp949'`로 실패. 한국어 Windows의 pip가 파일을 cp949로 읽는데 한글 주석이 UTF-8로 저장돼 있었음
+- 수정: requirements.txt 주석을 영어로 바꿔 ASCII만 남김
+- 테스트: `tests/test_project_files.py::test_requirements_is_ascii` 실패 확인 → 수정 후 통과. 전체 64개 통과, 5개 skip
+
+### 수정: Real-ESRGAN 의존성 교체 (basicsr 설치 실패)
+- 문제: `pip install -r requirements.txt`가 basicsr 빌드 단계에서 `KeyError: '__version__'`로 실패. basicsr의 setup.py가 exec()로 지역 변수를 채우는 방식인데, Python 3.13부터(PEP 667) 이 방식이 동작하지 않음. pip는 하나가 실패하면 전체 설치를 멈추므로 다른 라이브러리도 설치되지 않았음
+- 결정: Python 버전을 낮추는 대신 realesrgan·basicsr를 빼고 `spandrel`로 공식 RealESRGAN_x2plus.pth를 불러오도록 변경 (가중치 파일은 그대로)
+- 변경: `src/enhance/realesrgan.py` — spandrel로 모델 로드, 타일 분할 처리(`tile_process`)를 직접 구현, 메모리 부족 시 타일 축소 재시도는 유지. torchvision 호환 패치는 basicsr를 안 쓰므로 삭제
+- 변경: `requirements.txt` — realesrgan, basicsr 삭제, spandrel 추가
+- 테스트: `test_tile_process_matches_whole_image`(타일로 나눠도 결과가 같은지), `test_tile_process_tile_zero_runs_whole_image`, `test_requirements_installable_on_python_313` 추가 → 실패 확인 후 통과. 전체 66개 통과, 5개 skip
+
+### 변경: Real-ESRGAN을 공식 패키지로 되돌림 (사용자 요청)
+- 배경: 사용자 PC를 Python 3.11.9 가상환경으로 새로 구성 → basicsr 설치 가능 (실패 원인은 Python 3.13+였음)
+- 사용자 요청에 따라 spandrel을 빼고 공식 `realesrgan` + `basicsr`로 복귀
+- 변경: `requirements.txt`(spandrel 삭제, realesrgan·basicsr 추가, Python 3.11/3.12 필요 명시), `src/enhance/realesrgan.py`(공식 RealESRGANer 사용, torchvision 0.17+ 호환 패치 복구, 타일 축소 재시도 유지), README 설치 안내(Python 3.11/3.12, Git Bash 명령)
+- 테스트: `test_requirements_use_official_realesrgan`, `test_patch_functional_tensor` 실패 확인 → 수정 후 통과. 전체 65개 통과, 5개 skip
+
+### 추가: BDD100K 다운로드·변환 스크립트 (Hugging Face 사본)
+- 배경: 공식 BDD100K는 가입이 필요하고 내 쪽 브라우저에서는 공식 사이트가 열리지 않음 → 사용자 결정으로 Hugging Face 비공식 사본(`dgural/bdd100k`, 검증 세트, 약 695MB, FiftyOne 형식) 사용. BDD100K 라이선스(교육·연구·비영리) 적용
+- Claude 작업 환경(클라우드·PC 연결 셸)은 외부 다운로드가 막혀 있어(403) 다운로드는 사용자 PC에서 실행
+- 추가: `scripts/download_bdd100k_hf.py` — `huggingface_hub`로 받은 뒤 FiftyOne `samples.json`(상대 좌표 [x,y,w,h])을 BDD 라벨 형식 `bdd_labels.json`(픽셀 xyxy, timeofday 포함)으로 변환. 이미지 크기 정보가 없으면 이미지를 읽어서 계산
+- 변경: `configs/default.yaml` bdd100k 기본 경로 → `datasets/bdd100k_hf` (공식 경로는 주석으로 남김), `requirements.txt`에 huggingface_hub 추가, README 데이터 배치 갱신
+- 테스트: `tests/test_bdd_hf.py` 5개(좌표 변환, 크기 정보 없음, 절대 경로, 검출 없음, 기존 BDD 로더로 읽기) + 설정·requirements 테스트 → 실패 확인 후 통과. 전체 71개 통과, 5개 skip
+
+### 수정: BDD100K 다운로드 속도 개선
+- 문제: 저장소 파일 20,006개를 하나씩 받아 예상 1시간 이상 소요
+- 수정: 변환에 필요한 `samples.json`, `metadata.json`, `fiftyone.yml`, `data/*`만 받도록 제한(`fields/` 제외), 동시 다운로드 8 → 32개. 다시 실행하면 이미 받은 파일은 건너뜀
+- 테스트: `test_download_skips_unneeded_files` 실패 확인 → 통과. 전체 72개 통과, 5개 skip

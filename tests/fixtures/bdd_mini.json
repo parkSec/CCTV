@@ -1,0 +1,31 @@
+[
+  {
+    "name": "n1.jpg",
+    "attributes": {"weather": "clear", "timeofday": "night", "scene": "city street"},
+    "labels": [
+      {"category": "pedestrian", "box2d": {"x1": 10, "y1": 20, "x2": 30, "y2": 60}},
+      {"category": "car", "box2d": {"x1": 100, "y1": 100, "x2": 200, "y2": 180}},
+      {"category": "traffic light", "box2d": {"x1": 5, "y1": 5, "x2": 9, "y2": 15}}
+    ]
+  },
+  {
+    "name": "n2.jpg",
+    "attributes": {"weather": "rainy", "timeofday": "night", "scene": "highway"}
+  },
+  {
+    "name": "n3.jpg",
+    "attributes": {"weather": "clear", "timeofday": "night", "scene": "city street"},
+    "labels": [
+      {"category": "person", "box2d": {"x1": 1, "y1": 2, "x2": 3, "y2": 4}},
+      {"category": "motor", "box2d": {"x1": 50, "y1": 50, "x2": 70, "y2": 90}},
+      {"category": "drivable area", "poly2d": []}
+    ]
+  },
+  {
+    "name": "d1.jpg",
+    "attributes": {"weather": "clear", "timeofday": "daytime", "scene": "city street"},
+    "labels": [
+      {"category": "car", "box2d": {"x1": 0, "y1": 0, "x2": 10, "y2": 10}}
+    ]
+  }
+]
