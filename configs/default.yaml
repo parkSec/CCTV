@@ -1,0 +1,52 @@
+# 실험 조건 (스펙 5장). 상대 경로는 프로젝트 루트 기준.
+seed: 42
+num_samples: 300
+
+datasets:
+  bdd100k:
+    enabled: true
+    # Hugging Face 사본: python -m scripts.download_bdd100k_hf 로 받으면 이 위치에 생김
+    # 공식 사이트에서 받았다면: datasets/bdd100k/labels/det_20/det_val.json, datasets/bdd100k/images/100k/val
+    labels_json: datasets/bdd100k_hf/bdd_labels.json
+    images_dir: datasets/bdd100k_hf
+    timeofday: night
+  exdark:
+    enabled: true
+    images_dir: datasets/ExDark/ExDark
+    annos_dir: datasets/ExDark/ExDark_Annno
+
+detector:
+  weights: weights/yolo26s.pt
+  imgsz: 640
+  conf_eval: 0.25   # P/R/F1 기준
+  conf_min: 0.001   # AP 계산용으로 낮게 받음
+  device: 0
+
+matching:
+  iou: 0.5
+
+conditions:
+  - type: original
+  - type: gamma
+    sweep:
+      gamma: [1.5, 2.0, 2.5]
+  - type: clahe
+    tile_grid: 8
+    sweep:
+      clip_limit: [2.0, 3.0, 4.0]
+  - type: zerodce
+    weights: weights/Epoch99.pth
+    scale_factor: 1   # 논문 기본값은 12 (더 빠름). 스펙에 따라 1 사용
+  - type: realesrgan
+    weights: weights/RealESRGAN_x2plus.pth
+    scale: 2
+    tile: 400
+    min_tile: 128
+    half: true
+
+timing:
+  warmup: 5
+
+output:
+  root: results
+  save_samples: 8
