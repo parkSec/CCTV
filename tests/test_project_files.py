@@ -25,6 +25,11 @@ def test_requirements_include_hf_downloader():
     assert "huggingface_hub" in _requirement_names()
 
 
+def test_requirements_include_gdown():
+    """scripts/download_exdark.py가 Google Drive에서 받을 때 gdown을 쓴다."""
+    assert "gdown" in _requirement_names()
+
+
 def test_gitignore_excludes_logs_and_weights():
     """로그(사용자 경로가 찍힘)와 가중치 파일(용량 큼)은 저장소에 올리지 않는다."""
     lines = (PROJECT_ROOT / ".gitignore").read_text(encoding="utf-8").split()

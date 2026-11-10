@@ -1,9 +1,5 @@
 # 저조도 도로 영상 화질 개선 × 객체 탐지 비교
 
-야간·저조도 도로 영상은 차량과 보행자가 잘 보이지 않습니다.
-그렇다면 **영상을 밝고 선명하게 만들면 객체 탐지도 실제로 더 잘 될까?**
-이 프로젝트는 여러 화질 개선 기법을 같은 조건에서 적용하고, 같은 탐지 모델(YOLO26)로 결과를 비교해서 이 질문에 답해 봅니다.
-
 - 정확도: Precision, Recall, F1, mAP@0.5
 - 속도: 화질 개선 시간과 탐지 시간을 **따로** 측정
 - 결과: CSV / JSON 파일과 비교 이미지로 저장
@@ -70,7 +66,15 @@ python -m scripts.download_bdd100k_hf
 ```
 끝나면 `datasets/bdd100k_hf/` 폴더가 생깁니다.
 
-**ExDark** — [공식 GitHub](https://github.com/cs-chan/Exclusively-Dark-Image-Dataset)에서 받아 아래처럼 둡니다.
+**ExDark** — 이것도 명령 한 줄이면 됩니다. (이미지 약 1.5GB + 라벨 4.2MB, 공식 Google Drive)
+```bash
+python -m scripts.download_exdark
+```
+Google Drive 다운로드 횟수 제한으로 실패하면, [공식 GitHub](https://github.com/cs-chan/Exclusively-Dark-Image-Dataset)의 `Dataset`, `Groundtruth` 폴더 안내에 있는 링크에서 두 zip 파일을 직접 받은 뒤 이렇게 실행합니다.
+```bash
+python -m scripts.download_exdark --images-zip 이미지.zip --annos-zip 라벨.zip
+```
+정리가 끝나면 아래 구조가 됩니다.
 ```
 datasets/ExDark/
 ├─ ExDark/<클래스>/<이미지>

@@ -154,3 +154,27 @@
 - 남은 것(사용자 결정 필요): 이미 GitHub에 커밋된 `pytest_log.txt`에 사용자 경로가 들어 있음. 파일 삭제와 저장소 기록 정리는 사용자 확인 후 진행
 - 추가(사용자 요청): README 첫 줄의 팀 번호("10조") 삭제
 - 변경(사용자 요청): README를 처음 보는 사람이 따라 하기 쉽게 다시 작성 — 프로젝트 목적, 비교 기법 표, 공정 비교 조건, 데이터셋, 설치·데이터·가중치 준비, 실행 명령, 결과 파일 설명, 폴더 구조, 일정, 출처·라이선스 순서로 정리
+
+### 첫 실험 결과 (BDD100K 야간 20장, run 20261111-005719)
+- 환경: Python 3.11.9, torch 2.11.0+cu128, ultralytics 8.4.208, RTX 3070. 9개 조건 모두 실행(건너뜀 0, 제외 이미지 0)
+- 전체(all) F1 / AP50: 원본 0.377 / 0.326, Gamma1.5 0.393 / 0.322, Gamma2.0 0.349 / 0.280, Gamma2.5 0.355 / 0.255, CLAHE2.0 0.384 / 0.372, CLAHE3.0 0.383 / 0.361, CLAHE4.0 0.377 / 0.332, Zero-DCE++ 0.321 / 0.280, Real-ESRGAN 0.373 / 0.330
+- 화질 개선 시간(평균 ms/장): Gamma 0.8, CLAHE 11, Zero-DCE++ 47, Real-ESRGAN 905. 탐지 시간은 모든 조건 12~15ms
+- 해석 시 주의: 정답 박스 210개(car 179, person 25)뿐이라 조건 간 차이가 TP 1~4개 수준 → 통계적으로 의미 있다고 보기 어려움. 300장 실험 필요
+- 관찰: 모든 조건에서 Recall이 약 0.25로 낮음. 정답 박스의 45%가 원본 기준 32×32px 미만(입력 640으로 줄이면 16×16 미만)인 작은 객체라, 밝기보다 객체 크기가 Recall을 제한하는 것으로 보임
+- 샘플 이미지로 정답 박스 위치가 이미지와 맞는 것 확인. Zero-DCE++는 밝아지지만 노이즈도 커지고 FP가 18→25로 증가
+
+### 추가: ExDark 다운로드·정리 스크립트
+- 출처 확인: 공식 GitHub의 `Dataset/README.md`(이미지, Google Drive, 약 1.5GB)와 `Groundtruth/README.md`(라벨, Google Drive, 약 4.2MB). 라벨 형식은 `% bbGt` 헤더 + `클래스 l t w h ...`로 기존 로더와 일치. 이용 조건: 비상업적 학술 연구·교육
+- Claude 작업 환경은 외부 다운로드가 막혀 있어 사용자 PC에서 실행하는 스크립트로 작성
+- 추가: `scripts/download_exdark.py` — gdown으로 두 zip을 받아 압축 해제 → 압축 안 폴더 이름과 상관없이 클래스 폴더(Car, People 등)를 찾아 `datasets/ExDark/ExDark`, `datasets/ExDark/ExDark_Annno`로 정리. 이미 받은 zip은 다시 받지 않음. Google Drive 제한으로 실패하면 직접 받은 zip을 `--images-zip`, `--annos-zip`으로 넘길 수 있음
+- 변경: `requirements.txt`에 gdown 추가, README ExDark 안내 갱신
+- 테스트: `tests/test_exdark_download.py` 3개(표준 폴더 이름, 다른 폴더 이름, 다시 실행) + `test_requirements_include_gdown` → 실패 확인 후 통과. 전체 82개 통과, 6개 skip
+
+### 전체 실험 결과 (run 20261111-011401, BDD100K 야간 300장 + ExDark 300장, 9개 조건)
+- 소요 시간 약 11분. 건너뛴 조건 0개. 제외 이미지 4장: 모두 ExDark의 큰 이미지에서 Zero-DCE++가 GPU 메모리 부족(OOM)으로 실패 → ExDark Zero-DCE++만 296장 기준 (다른 조건은 300장)
+- BDD100K(정답 3,271개, car 2,852 / person 323) 전체 F1 / AP50: 원본 0.484 / 0.312, Gamma1.5 0.473 / 0.297, Gamma2.0 0.441 / 0.271, Gamma2.5 0.426 / 0.260, CLAHE2.0 0.490 / 0.311, CLAHE3.0 0.476 / 0.295, CLAHE4.0 0.455 / 0.261, Zero-DCE++ 0.373 / 0.199, Real-ESRGAN 0.486 / 0.287
+- ExDark(정답 1,063개, person 587 / car 259) 전체 F1 / AP50: 원본 0.714 / 0.742, Gamma1.5 0.705 / 0.731, Gamma2.0 0.678 / 0.681, Gamma2.5 0.669 / 0.657, CLAHE2.0 0.713 / 0.731, CLAHE3.0 0.711 / 0.731, CLAHE4.0 0.709 / 0.727, Zero-DCE++ 0.668 / 0.689, Real-ESRGAN 0.703 / 0.728
+- 화질 개선 시간(평균 ms/장, BDD / ExDark): Gamma 0.7 / 0.9, CLAHE 11 / 11, Zero-DCE++ 49 / 126, Real-ESRGAN 818 / 787. 탐지 시간 12~18ms
+- 관찰: 두 데이터셋 모두 원본보다 확실히 좋아진 기법은 없음. 약한 처리(CLAHE2.0, Gamma1.5, Real-ESRGAN)는 원본과 비슷하고, 강하게 처리할수록(Gamma 2.0→2.5, CLAHE 3→4) 성능이 떨어지고 FP가 늘어남. Zero-DCE++가 가장 크게 떨어짐(BDD F1 −0.11, FP 316→464)
+- BDD Recall(0.35)이 ExDark(0.74)보다 크게 낮음 → BDD는 먼 거리의 작은 차량이 많음
+- 남은 문제: Zero-DCE++ OOM으로 ExDark 비교 이미지 수가 달라짐(296 vs 300) → "모든 조건 같은 이미지" 원칙 위반. 수정 필요
