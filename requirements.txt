@@ -10,6 +10,7 @@ pytest
 ultralytics>=8.4.0
 streamlit
 huggingface_hub   # scripts/download_bdd100k_hf.py
+gdown             # scripts/download_exdark.py
 # Phase 2 (Real-ESRGAN, official package)
 realesrgan
 basicsr
