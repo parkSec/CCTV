@@ -140,3 +140,13 @@ def test_condition_failing_at_warmup_is_skipped(tmp_path, cfg, monkeypatch):
     assert s["condition"] == "broken" and s["dataset"] == "fake" and "CUDA error" in s["reason"]
     m = pd.read_csv(out / "metrics.csv")
     assert set(m["condition"]) == {"original"}
+
+
+def test_run_meta_has_no_absolute_project_paths(tmp_path, cfg):
+    """run_meta.json에 사용자 이름이 들어간 절대 경로가 남지 않아야 한다."""
+    out = run_experiment(cfg, detector=OracleDetector(), datasets=[_make_dataset(tmp_path)],
+                         out_root=tmp_path / "results", run_id="p1")
+    text = (out / "run_meta.json").read_text(encoding="utf-8")
+    meta = json.loads(text)
+    assert meta["config"]["datasets"]["bdd100k"]["images_dir"] == "datasets/bdd100k_hf"
+    assert str(PROJECT_ROOT) not in text

@@ -21,7 +21,7 @@ from src.enhance.registry import build_enhancers
 from src.eval.matching import match_image
 from src.eval.metrics import ImageRecord, compute_metrics
 from src.imageio import read_image, write_image
-from src.io_utils import append_jsonl, collect_env, write_csv, write_json
+from src.io_utils import append_jsonl, collect_env, relativize_paths, write_csv, write_json
 from src.timing import summarize_ms, timed
 
 REQUIRED_PATHS = {"bdd100k": ["labels_json", "images_dir"], "exdark": ["images_dir", "annos_dir"]}
@@ -161,9 +161,11 @@ def run_experiment(cfg: dict, detector: Detector | None = None, datasets: list[D
 
     write_csv(metric_rows, out_dir / "metrics.csv")
     write_csv(timing_rows, out_dir / "timing.csv")
-    write_json({"run_id": run_id, "started_at": started, "finished_at": datetime.now().isoformat(timespec="seconds"),
-                "config": cfg, "env": collect_env(), "skipped_conditions": skipped,
-                "excluded_images": excluded, "sample_ids": sample_ids}, out_dir / "run_meta.json")
+    meta = {"run_id": run_id, "started_at": started, "finished_at": datetime.now().isoformat(timespec="seconds"),
+            "config": cfg, "env": collect_env(), "skipped_conditions": skipped,
+            "excluded_images": excluded, "sample_ids": sample_ids}
+    # 사용자 이름이 담긴 절대 경로를 남기지 않는다
+    write_json(relativize_paths(meta, PROJECT_ROOT), out_dir / "run_meta.json")
     for s in skipped:
         print(f"[건너뜀] {s['condition']}: {s['reason']}")
     print(f"결과: {out_dir}")
