@@ -12,3 +12,5 @@ pytest_log.txt
 # 모델 가중치 (ultralytics가 프로젝트 루트에 받는 yolo26s.pt 포함)
 *.pt
 *.pth
+# 개인 작업 기록
+work_history.md
