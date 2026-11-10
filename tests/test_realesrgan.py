@@ -95,3 +95,16 @@ def test_output_same_size_as_input():
     out = enh.enhance(img)
     assert out.shape == img.shape and out.dtype == np.uint8
     assert enh.name == "realesrgan_x2"
+
+
+def test_no_tile_progress_output(capsys):
+    """공식 RealESRGANer는 타일마다 'Tile 1/1'을 출력한다. 수백 장 실험에서 화면이 묻히지 않게 숨긴다."""
+    pytest.importorskip("realesrgan")
+    from src.config import PROJECT_ROOT
+    from src.enhance.realesrgan import RealESRGANEnhancer
+    w = PROJECT_ROOT / "weights" / "RealESRGAN_x2plus.pth"
+    if not w.exists():
+        pytest.skip("weights/RealESRGAN_x2plus.pth 없음")
+    enh = RealESRGANEnhancer(w, scale=2, tile=64, half=False)
+    enh.enhance(np.zeros((90, 130, 3), dtype=np.uint8))
+    assert "Tile" not in capsys.readouterr().out
