@@ -75,3 +75,20 @@ def test_commit_of(tmp_path):
     run("-c", "user.name=t", "-c", "user.email=t@t", "commit", "-qm", "x")
     assert re.fullmatch(r"[0-9a-f]{40}", commit_of(r))
     assert commit_of(tmp_path / "missing") is None
+
+
+def test_build_in_repo_allows_lazy_import(tmp_path):
+    from src.enhance.third_party import build_in_repo
+    _write(tmp_path / "g" / "model.py",
+           "class Net:\n    def __init__(self, k):\n        from helper import V\n        self.v = V * k\n")
+    _write(tmp_path / "g" / "helper.py", "V = 5\n")
+    net = build_in_repo(tmp_path / "g", "model", "Net", 2)
+    assert net.v == 10
+    assert "model" not in sys.modules and "helper" not in sys.modules
+
+
+def test_build_in_repo_constructor_error_is_unavailable(tmp_path):
+    from src.enhance.third_party import build_in_repo
+    _write(tmp_path / "h" / "model.py", "class Net:\n    def __init__(self):\n        raise OSError('bad file')\n")
+    with pytest.raises(EnhancerUnavailable, match="bad file"):
+        build_in_repo(tmp_path / "h", "model", "Net")

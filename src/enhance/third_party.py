@@ -37,22 +37,38 @@ def repo_context(repo_dir: Path) -> Iterator[None]:
             del sys.modules[name]
 
 
+def _import_attr(repo_dir: Path, module: str, attr: str) -> Any:
+    """repo_context 안에서 부른다."""
+    shadowed = sys.modules.pop(module, None)   # 같은 이름의 다른 모듈이 이미 있으면 잠깐 치운다
+    try:
+        mod = importlib.import_module(module)
+        if not hasattr(mod, attr):
+            raise EnhancerUnavailable(f"{repo_dir}/{module}.py에 {attr}이(가) 없음")
+        return getattr(mod, attr)
+    except EnhancerUnavailable:
+        raise
+    except Exception as e:  # 저장소 코드의 import 오류 등
+        raise EnhancerUnavailable(f"{repo_dir}/{module}.py를 불러올 수 없음 — {type(e).__name__}: {e}") from e
+    finally:
+        if shadowed is not None:
+            sys.modules[module] = shadowed
+
+
+def build_in_repo(repo_dir: Path, module: str, attr: str, *args, **kwargs) -> Any:
+    """repo_dir/module.py의 attr(클래스)를 저장소 import가 되는 상태에서 만든다.
+    생성 중 오류(가중치 파일 문제 등)도 EnhancerUnavailable로 바꾼다."""
+    with repo_context(repo_dir):
+        cls = _import_attr(repo_dir, module, attr)
+        try:
+            return cls(*args, **kwargs)
+        except Exception as e:
+            raise EnhancerUnavailable(f"{repo_dir}/{module}.{attr} 생성 실패 — {type(e).__name__}: {e}") from e
+
+
 def load_symbol(repo_dir: Path, module: str, attr: str) -> Any:
     """repo_dir/module.py의 attr. 폴더·모듈·이름이 없거나 import가 실패하면 EnhancerUnavailable."""
     with repo_context(repo_dir):
-        shadowed = sys.modules.pop(module, None)   # 같은 이름의 다른 모듈이 이미 있으면 잠깐 치운다
-        try:
-            mod = importlib.import_module(module)
-            if not hasattr(mod, attr):
-                raise EnhancerUnavailable(f"{repo_dir}/{module}.py에 {attr}이(가) 없음")
-            return getattr(mod, attr)
-        except EnhancerUnavailable:
-            raise
-        except Exception as e:  # 저장소 코드의 import 오류 등
-            raise EnhancerUnavailable(f"{repo_dir}/{module}.py를 불러올 수 없음 — {type(e).__name__}: {e}") from e
-        finally:
-            if shadowed is not None:
-                sys.modules[module] = shadowed
+        return _import_attr(repo_dir, module, attr)
 
 
 def commit_of(repo_dir: Path) -> str | None:
