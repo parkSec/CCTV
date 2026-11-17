@@ -173,6 +173,39 @@ CSV 파일은 엑셀에서 바로 열 수 있습니다.
 
 ---
 
+### 3-6. 재설계 실험 실행 순서 (개선 모델 7개 × 탐지 4설정 × 화질 지표 7개)
+
+`redesign` 브랜치의 실험입니다. 설계: `docs/superpowers/specs/2026-11-12-enhancement-redesign-design.md`
+
+```bash
+# 1. 라이브러리 (pyiqa 추가됨)
+pip install -r requirements.txt
+
+# 2. 탐지 모델 (BDD100K로 학습한 YOLO26s·m, Hugging Face)
+python -m scripts.download_detectors
+
+# 3. 외부 개선 모델 공식 저장소 (Zero-DCE, SCI, RUAS, Night-Enhancement) → third_party/
+python -m scripts.fetch_third_party
+#    Night-Enhancement 가중치는 README의 Dropbox 링크에서 직접 받아 출력된 위치에 둔다
+
+# 4. 준비 상태 확인 (데이터셋·가중치·pyiqa·CUDA). 실험은 하지 않음
+python -m scripts.run_experiment --check
+
+# 5. 작은 실행으로 흐름 확인 → 전체 실행
+python -m scripts.run_experiment --num-samples 5
+python -m scripts.run_experiment
+
+# 6. 분석 (변화량, 화질-탐지 상관, 빠른/확실한 모델)
+python -m scripts.analyze results/<run_id>
+```
+
+| 결과 파일 | 내용 |
+|---|---|
+| `detection_metrics.csv` | 데이터셋 × 조건 × 탐지 설정(모델, 입력 크기) × 클래스 × 객체 크기별 P / R / F1 / AP50 / AP50-95 |
+| `iqa_metrics.csv` | 데이터셋 × 조건별 화질 지표 평균·중앙값·NaN 개수 |
+| `timing.csv` | 개선 단계별(준비·추론·후처리·합계) 시간 평균·중앙값·p95, 탐지 설정별 시간, GPU 최대 메모리 |
+| `analysis/` | `delta.csv`, `iqa_correlation.csv`, `selection.json`, 그림 2개 |
+
 ## 4. 참고
 
 ### 폴더 구조
