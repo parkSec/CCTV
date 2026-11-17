@@ -1,0 +1,6 @@
+{
+  "zerodce": {"url": "https://github.com/Li-Chongyi/Zero-DCE", "commit": "e0f4adc54d0f23348c4a9b84acc08fe8778d5bfd"},
+  "sci": {"url": "https://github.com/vis-opt-group/SCI", "commit": "f6f88fd73cd614dbeee17d61a0dbde3678b7e183"},
+  "ruas": {"url": "https://github.com/KarelZhang/RUAS", "commit": "f621bb19ceffbe27b2d9625bb806bc7cc60aea7b"},
+  "nightenh": {"url": "https://github.com/jinyeying/night-enhancement", "commit": "2a0681eae7c2bbc120a019d5bb71bcbd12291df7"}
+}
