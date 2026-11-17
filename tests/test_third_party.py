@@ -38,6 +38,30 @@ def test_existing_module_not_purged(tmp_path):
     assert sys.modules["json"] is json_before
 
 
+def test_outside_module_first_imported_in_repo_is_kept(tmp_path, monkeypatch):
+    """저장소 코드가 처음 불러온 외부 패키지(torchvision 등)는 지우면 안 된다. 지우면 다음 import 때
+    다시 실행되어 torch 연산자 등록이 겹쳐 RuntimeError가 난다."""
+    _write(tmp_path / "lib" / "extlib_once.py", "import sys\nassert 'extlib_once_loaded' not in sys.modules\n"
+           "sys.modules['extlib_once_loaded'] = sys\n")
+    monkeypatch.syspath_prepend(str(tmp_path / "lib"))
+    monkeypatch.delitem(sys.modules, "extlib_once_loaded", raising=False)
+    _write(tmp_path / "k" / "model.py", "import extlib_once\nY = 1\n")
+    assert load_symbol(tmp_path / "k", "model", "Y") == 1
+    assert "extlib_once" in sys.modules and "model" not in sys.modules
+    import extlib_once  # noqa: F401  (다시 실행되면 assert에 걸린다)
+
+
+def test_build_in_repo_relative_path_in_constructor(tmp_path, monkeypatch):
+    """RUAS처럼 생성자가 저장소 기준 상대 경로('./model/denoise.pt')를 열어도 된다."""
+    from src.enhance.third_party import build_in_repo
+    _write(tmp_path / "m" / "model.py",
+           "class Net:\n    def __init__(self):\n        self.t = open('./data/w.txt').read()\n")
+    _write(tmp_path / "m" / "data" / "w.txt", "ok")
+    monkeypatch.chdir(tmp_path)
+    assert build_in_repo("m", "model", "Net").t == "ok"
+    assert str(tmp_path) == str(__import__("pathlib").Path.cwd())
+
+
 def test_missing_repo_raises(tmp_path):
     with pytest.raises(EnhancerUnavailable, match="fetch_third_party"):
         load_symbol(tmp_path / "nope", "model", "X")

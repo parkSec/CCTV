@@ -33,7 +33,7 @@ class SCIEnhancer(TorchRGBEnhancer):
         require_torch("SCI")
         self._set_device(device)
         self.params = {"variant": variant}
-        net = build_in_repo(code_dir, "model", "Finetunemodel", str(weights))
+        net = build_in_repo(code_dir, "model", "Finetunemodel", str(Path(weights).resolve()))
         enhance_keys = {k: v for k, v in net.state_dict().items() if k.startswith("enhance.")}
         missing = missing_model_keys(enhance_keys, load_checkpoint(weights, "cpu"))
         if not enhance_keys or missing:
