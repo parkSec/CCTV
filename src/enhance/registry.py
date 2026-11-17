@@ -9,8 +9,8 @@ from .gamma import GammaEnhancer
 
 
 def _build_zerodcepp(cond: dict) -> Enhancer:
-    from .zerodce import ZeroDCEEnhancer
-    return ZeroDCEEnhancer(cond["weights"], scale_factor=cond.get("scale_factor", 1), device=cond.get("device"))
+    from .zerodce import ZeroDCEPPEnhancer
+    return ZeroDCEPPEnhancer(cond["weights"], scale_factor=cond.get("scale_factor", 1), device=cond.get("device"))
 
 
 BUILDERS = {

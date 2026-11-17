@@ -88,8 +88,8 @@ def _load_state(path: Path, device):
     return {k.removeprefix("module."): v for k, v in state.items()}
 
 
-class ZeroDCEEnhancer(Enhancer):
-    name = "zerodce"
+class ZeroDCEPPEnhancer(Enhancer):
+    name = "zerodcepp"
 
     def __init__(self, weights: Path, scale_factor: int = 1, device: str | None = None):
         weights = Path(weights)
@@ -107,11 +107,16 @@ class ZeroDCEEnhancer(Enhancer):
         except RuntimeError as e:
             raise EnhancerUnavailable(f"가중치 구조가 Zero-DCE++와 맞지 않음: {e}") from e
 
-    def enhance(self, img: np.ndarray) -> np.ndarray:
-        padded, (h, w) = pad_to_multiple(img, self.scale_factor)
+    def preprocess(self, img: np.ndarray):
+        padded, _ = pad_to_multiple(img, self.scale_factor)
         rgb = cv2.cvtColor(padded, cv2.COLOR_BGR2RGB).astype(np.float32) / 255.0
-        x = torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).to(self.device)
+        return torch.from_numpy(rgb).permute(2, 0, 1).unsqueeze(0).to(self.device)
+
+    def infer(self, x):
         with torch.no_grad():
-            y, _ = self.net(x)
+            return self.net(x)[0]
+
+    def postprocess(self, y, img_shape: tuple[int, int]) -> np.ndarray:
+        h, w = img_shape
         y = (y.clamp(0, 1)[0].permute(1, 2, 0).cpu().numpy() * 255.0).round().astype(np.uint8)
         return cv2.cvtColor(y, cv2.COLOR_RGB2BGR)[:h, :w]

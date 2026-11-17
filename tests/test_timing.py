@@ -24,4 +24,17 @@ def test_summarize_ms():
 
 
 def test_summarize_ms_empty():
-    assert summarize_ms([]) == {"mean": 0.0, "median": 0.0, "n": 0}
+    assert summarize_ms([]) == {"mean": 0.0, "median": 0.0, "p95": 0.0, "n": 0}
+
+
+def test_summarize_ms_p95():
+    import numpy as np
+    vals = [1, 2, 3, 4, 100]
+    assert summarize_ms(vals)["p95"] == pytest.approx(float(np.percentile(vals, 95)))
+
+
+def test_gpu_peak_without_cuda_is_safe():
+    from src.timing import gpu_peak_mb, reset_gpu_peak
+    reset_gpu_peak()
+    v = gpu_peak_mb()
+    assert v is None or v >= 0
