@@ -2,8 +2,12 @@
 
 COMMON_CLASSES = ["person", "bicycle", "car", "motorcycle", "bus", "truck"]
 
-# YOLO(COCO) 클래스 id → 공통 클래스 id. 여기에 없는 COCO 클래스는 버린다.
-COCO_TO_COMMON = {0: 0, 1: 1, 2: 2, 3: 3, 5: 4, 7: 5}
+# BDD100K로 학습한 탐지 모델(dronefreak/bdd100k-yolo26s·m)의 클래스 이름 → 공통 클래스 id.
+# 모델 카드 순서: person, rider, car, truck, bus, train, motor, bike, traffic light, traffic sign
+BDD_MODEL_TO_COMMON = {"person": 0, "rider": 0, "bike": 1, "bicycle": 1, "car": 2,
+                       "motor": 3, "motorcycle": 3, "bus": 4, "truck": 5}
+# 공통 클래스에 없어 버리는 모델 클래스
+BDD_MODEL_IGNORED = {"train", "traffic light", "traffic sign"}
 
 # BDD100K: det_20 라벨 이름과 2018 원본 라벨 이름을 모두 받는다.
 BDD_TO_COMMON = {
