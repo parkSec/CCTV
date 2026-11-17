@@ -38,3 +38,9 @@ def test_gpu_peak_without_cuda_is_safe():
     reset_gpu_peak()
     v = gpu_peak_mb()
     assert v is None or v >= 0
+
+
+def test_gpu_allocated_without_cuda_is_safe():
+    from src.timing import gpu_allocated_mb
+    v = gpu_allocated_mb()
+    assert v is None or v >= 0

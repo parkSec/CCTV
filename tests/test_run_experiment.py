@@ -272,3 +272,13 @@ def test_check_mode_runs_nothing(tmp_path, capsys):
     text = capsys.readouterr().out
     for item in ["bdd100k", "yolo26s_bdd", "sci", "pyiqa", "CUDA"]:
         assert item in text, item
+
+
+def test_gpu_peak_is_enhancement_only(tmp_path, cfg, monkeypatch):
+    """탐지·화질 지표 모델이 차지한 메모리는 빼고, 개선 단계에서 늘어난 최대치만 기록한다."""
+    import scripts.run_experiment as rx
+    monkeypatch.setattr(rx, "gpu_allocated_mb", lambda: 100.0)   # 개선 직전 이미 잡혀 있던 메모리
+    monkeypatch.setattr(rx, "gpu_peak_mb", lambda: 130.0)        # 개선 중 최대
+    monkeypatch.setattr(rx, "reset_gpu_peak", lambda: None)
+    out = _run(cfg, tmp_path, [_make_dataset(tmp_path)])
+    assert (pd.read_csv(out / "timing.csv")["gpu_peak_mb"] == 30.0).all()
