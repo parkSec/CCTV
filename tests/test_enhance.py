@@ -54,7 +54,8 @@ def test_build_default_conditions(tmp_path):
     for c in cfg["conditions"]:
         if "weights" in c:
             c["weights"] = tmp_path / "missing.pth"
-    enhancers, skipped = build_enhancers(cfg["conditions"])
+    # third_party 저장소를 받은 PC에서도 같은 결과가 나오도록 빈 폴더를 가리키게 한다
+    enhancers, skipped = build_enhancers(cfg["conditions"], third_party_root=tmp_path / "third_party")
     assert [e.name for e in enhancers] == ["original", "gamma_g1.5", "clahe_c2.0"]
     assert [s["condition"] for s in skipped] == ["zerodce", "zerodcepp", "sci", "ruas", "nightenh"]
     assert all(s["reason"] for s in skipped)
