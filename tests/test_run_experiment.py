@@ -76,7 +76,7 @@ def test_smoke_run(tmp_path, cfg):
     for name in ["metrics.csv", "timing.csv", "per_image.jsonl", "run_meta.json"]:
         assert (out / name).exists(), name
     m = pd.read_csv(out / "metrics.csv")
-    row = m[(m["condition"] == "original") & (m["class"] == "all")].iloc[0]
+    row = m[(m["condition"] == "original") & (m["class"] == "all") & (m["size"] == "all")].iloc[0]
     assert row["f1"] == 1.0 and row["dataset"] == "fake"
     assert set(m["condition"]) == {"original", "gamma_g1.5", "clahe_c2.0"}
     t = pd.read_csv(out / "timing.csv")
