@@ -133,7 +133,7 @@ def run_condition(ds: DetectionDataset, samples: list[Sample], enh: Enhancer, de
 def run_experiment(cfg: dict, detector: Detector | None = None, datasets: list[DetectionDataset] | None = None,
                    out_root: Path | None = None, run_id: str | None = None) -> Path:
     datasets = datasets if datasets is not None else build_datasets(cfg)   # 경로 검사가 가장 먼저
-    enhancers, skipped = build_enhancers(cfg["conditions"])
+    enhancers, skipped = build_enhancers(cfg["conditions"], cfg["third_party"]["root"])
     detector = detector if detector is not None else build_detector(cfg)
 
     run_id = run_id or datetime.now().strftime("%Y%m%d-%H%M%S")
