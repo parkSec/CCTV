@@ -50,18 +50,18 @@ def _random_weights(tmp_path, scale_factor=1):
 
 def test_shape_dtype_preserved(tmp_path):
     pytest.importorskip("torch")
-    from src.enhance.zerodce import ZeroDCEEnhancer
-    enh = ZeroDCEEnhancer(_random_weights(tmp_path), scale_factor=1, device="cpu")
+    from src.enhance.zerodce import ZeroDCEPPEnhancer
+    enh = ZeroDCEPPEnhancer(_random_weights(tmp_path), scale_factor=1, device="cpu")
     img = np.random.default_rng(0).integers(0, 60, (37, 53, 3), dtype=np.uint8)
     out = enh.enhance(img)
     assert out.shape == img.shape and out.dtype == np.uint8
-    assert enh.name == "zerodce"
+    assert enh.name == "zerodcepp"
 
 
 def test_scale_factor_12_keeps_size(tmp_path):
     pytest.importorskip("torch")
-    from src.enhance.zerodce import ZeroDCEEnhancer
-    enh = ZeroDCEEnhancer(_random_weights(tmp_path, 12), scale_factor=12, device="cpu")
+    from src.enhance.zerodce import ZeroDCEPPEnhancer
+    enh = ZeroDCEPPEnhancer(_random_weights(tmp_path, 12), scale_factor=12, device="cpu")
     img = np.zeros((100, 130, 3), np.uint8)
     assert enh.enhance(img).shape == img.shape
 
@@ -72,3 +72,10 @@ def test_official_param_count(tmp_path):
     from src.enhance.zerodce import ZeroDCEPPNet
     n = sum(p.numel() for p in ZeroDCEPPNet(1).parameters())
     assert 9_000 < n < 11_000
+
+
+def test_contract(tmp_path):
+    pytest.importorskip("torch")
+    from src.enhance.zerodce import ZeroDCEPPEnhancer
+    from tests.enhancer_contract import assert_enhancer_contract
+    assert_enhancer_contract(ZeroDCEPPEnhancer(_random_weights(tmp_path), scale_factor=1, device="cpu"))

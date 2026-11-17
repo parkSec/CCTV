@@ -6,6 +6,7 @@ from src.enhance.base import IdentityEnhancer
 from src.enhance.clahe import ClaheEnhancer
 from src.enhance.gamma import GammaEnhancer
 from src.enhance.registry import build_enhancers
+from tests.enhancer_contract import assert_enhancer_contract
 
 
 @pytest.fixture
@@ -63,3 +64,19 @@ def test_unknown_type_skipped():
     enhancers, skipped = build_enhancers([{"type": "magic"}])
     assert enhancers == []
     assert skipped[0]["condition"] == "magic" and "magic" in skipped[0]["reason"]
+
+
+@pytest.mark.parametrize("enh", [IdentityEnhancer(), GammaEnhancer(1.5), ClaheEnhancer(2.0, 8)])
+def test_contract(enh):
+    assert_enhancer_contract(enh)
+
+
+@pytest.mark.parametrize("enh", [IdentityEnhancer(), GammaEnhancer(1.5), ClaheEnhancer(2.0, 8)])
+def test_enhance_equals_staged(enh, dark):
+    staged = enh.postprocess(enh.infer(enh.preprocess(dark)), dark.shape[:2])
+    np.testing.assert_array_equal(enh.enhance(dark), staged)
+
+
+def test_enhance_timed_total_covers_stages(dark):
+    _, t = ClaheEnhancer(2.0, 8).enhance_timed(dark)
+    assert t["total_ms"] >= t["infer_ms"]
