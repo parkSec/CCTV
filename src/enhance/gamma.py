@@ -4,10 +4,10 @@ from __future__ import annotations
 import cv2
 import numpy as np
 
-from .base import Enhancer
+from .base import PassThroughEnhancer
 
 
-class GammaEnhancer(Enhancer):
+class GammaEnhancer(PassThroughEnhancer):
     def __init__(self, gamma: float):
         if gamma <= 0:
             raise ValueError("gamma는 0보다 커야 합니다")
@@ -17,5 +17,5 @@ class GammaEnhancer(Enhancer):
         x = np.arange(256, dtype=np.float64) / 255.0
         self._lut = np.clip(np.round(255.0 * x ** (1.0 / self.gamma)), 0, 255).astype(np.uint8)
 
-    def enhance(self, img: np.ndarray) -> np.ndarray:
+    def infer(self, img: np.ndarray) -> np.ndarray:
         return cv2.LUT(img, self._lut)
