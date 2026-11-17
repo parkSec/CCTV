@@ -2,7 +2,7 @@
 from __future__ import annotations
 
 from abc import ABC, abstractmethod
-from dataclasses import dataclass
+from dataclasses import dataclass, field
 
 import numpy as np
 
@@ -12,6 +12,7 @@ class Detections:
     boxes: np.ndarray   # (N, 4) float32 xyxy
     labels: np.ndarray  # (N,) int64 공통 클래스 id
     scores: np.ndarray  # (N,) float32
+    speed: dict[str, float] = field(default_factory=dict)  # Ultralytics Results.speed (preprocess, inference, postprocess ms)
 
 
 class Detector(ABC):
