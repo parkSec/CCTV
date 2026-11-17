@@ -132,7 +132,7 @@ class BrokenEnhancer:
 def test_condition_failing_at_warmup_is_skipped(tmp_path, cfg, monkeypatch):
     import scripts.run_experiment as rx
     from src.enhance.base import IdentityEnhancer
-    monkeypatch.setattr(rx, "build_enhancers", lambda conds: ([BrokenEnhancer(), IdentityEnhancer()], []))
+    monkeypatch.setattr(rx, "build_enhancers", lambda conds, root=None: ([BrokenEnhancer(), IdentityEnhancer()], []))
     out = run_experiment(cfg, detector=OracleDetector(), datasets=[_make_dataset(tmp_path)],
                          out_root=tmp_path / "results", run_id="w1")
     meta = json.loads((out / "run_meta.json").read_text(encoding="utf-8"))
