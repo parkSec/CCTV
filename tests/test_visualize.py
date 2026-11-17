@@ -46,3 +46,20 @@ def test_compare_frame_one_tile_per_condition():
     assert [r["condition"] for r in rows] == ["original", "gamma_g1.5"]
     assert all(r["enh_ms"] >= 0 and r["n_det"] == 1 for r in rows)
     assert grid.shape[1] == 4 * 80
+
+
+def test_compare_frame_excludes_first_call_cost():
+    import time
+    from src.enhance.base import PassThroughEnhancer
+
+    class SlowFirst(PassThroughEnhancer):
+        name, params, calls = "slow", {}, 0
+
+        def infer(self, x):
+            self.calls += 1
+            if self.calls == 1:
+                time.sleep(0.2)
+            return x
+
+    _, rows = compare_frame(np.zeros((20, 20, 3), np.uint8), [SlowFirst()], FakeDetector(), 0.25)
+    assert rows[0]["enh_ms"] < 100
