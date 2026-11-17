@@ -56,3 +56,11 @@ def gpu_peak_mb() -> float | None:
     if torch is None:
         return None
     return torch.cuda.max_memory_allocated() / 2**20
+
+
+def gpu_allocated_mb() -> float | None:
+    """지금 PyTorch가 잡고 있는 GPU 메모리(MB). CUDA가 없으면 None."""
+    torch = _cuda_torch()
+    if torch is None:
+        return None
+    return torch.cuda.memory_allocated() / 2**20
