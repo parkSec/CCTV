@@ -32,7 +32,8 @@ from src.imageio import read_image, write_image
 from src.io_utils import append_jsonl, collect_env, relativize_paths, write_csv, write_json
 from src.timing import gpu_allocated_mb, gpu_peak_mb, reset_gpu_peak, summarize_ms, timed
 
-REQUIRED_PATHS = {"bdd100k": ["labels_json", "images_dir"], "exdark": ["images_dir", "annos_dir"]}
+REQUIRED_PATHS = {"bdd100k": ["labels_json", "images_dir"], "exdark": ["images_dir", "annos_dir"],
+                  "acdc_night": ["root"], "darkdriving": ["root"]}
 ENH_KEYS = ("pre_ms", "infer_ms", "post_ms", "total_ms")
 
 
@@ -40,7 +41,9 @@ ENH_KEYS = ("pre_ms", "infer_ms", "post_ms", "total_ms")
 
 def build_datasets(cfg: dict) -> tuple[list[DetectionDataset], list[dict]]:
     """활성화된 데이터셋 중 경로가 있는 것만 만든다. 없으면 오류 대신 건너뛴다 → (데이터셋, 건너뛴 목록)."""
+    from src.data.acdc import ACDCDataset
     from src.data.bdd100k import BDD100KDataset
+    from src.data.darkdriving import DarkDrivingDataset
     from src.data.exdark import ExDarkDataset
 
     out, skipped = [], []
@@ -56,8 +59,12 @@ def build_datasets(cfg: dict) -> tuple[list[DetectionDataset], list[dict]]:
             continue
         if n == "bdd100k":
             out.append(BDD100KDataset(c["labels_json"], c["images_dir"], c.get("timeofday", "night")))
-        else:
+        elif n == "exdark":
             out.append(ExDarkDataset(c["images_dir"], c["annos_dir"]))
+        elif n == "acdc_night":
+            out.append(ACDCDataset(c["root"], "night", tuple(c.get("splits", ("train", "val")))))
+        else:
+            out.append(DarkDrivingDataset(c["root"], c.get("split", "val")))
     return out, skipped
 
 

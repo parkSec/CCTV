@@ -54,9 +54,21 @@ def _to_path(value: str) -> Path:
     return p if p.is_absolute() else PROJECT_ROOT / p
 
 
-def load_config(path: str | Path) -> dict:
+def _read_raw(path: Path) -> dict:
+    """YAML을 읽는다. `base: <파일>`이 있으면 그 설정을 먼저 읽고 이 파일 값으로 덮어쓴다(목록은 통째로 바뀜).
+    base 경로는 이 파일이 있는 폴더 기준."""
+    path = Path(path)
     with open(path, encoding="utf-8") as f:
         raw = yaml.safe_load(f) or {}
+    base = raw.pop("base", None)
+    if base is None:
+        return raw
+    bp = Path(base)
+    return _merge(_read_raw(bp if bp.is_absolute() else path.parent / bp), raw)
+
+
+def load_config(path: str | Path) -> dict:
+    raw = _read_raw(Path(path))
     missing = [k for k in REQUIRED_KEYS if k not in raw]
     if missing:
         raise ConfigError(f"설정 파일 {path}에 필수 키가 없습니다: {missing}")

@@ -138,17 +138,32 @@ def test_smoke_outputs(tmp_path, cfg):
 def test_missing_dataset_skipped(tmp_path, cfg):
     cfg["datasets"]["bdd100k"]["labels_json"] = tmp_path / "nope.json"
     cfg["datasets"]["exdark"]["images_dir"] = tmp_path / "nope_dir"
+    for n in ("acdc_night", "darkdriving"):   # PC에는 받아 둔 데이터가 있으므로 없는 경로로 바꾼다
+        cfg["datasets"][n]["root"] = tmp_path / "nope" / n
     out = run_experiment(cfg, detectors=_four_detectors(), iqa=FakeIQA(), out_root=tmp_path / "results", run_id="m")
     skipped = _meta(out)["skipped_datasets"]
-    assert {s["dataset"] for s in skipped} == {"bdd100k", "exdark"}
+    assert {"bdd100k", "exdark"} <= {s["dataset"] for s in skipped}
     assert any("nope.json" in s["reason"] for s in skipped)
 
 
 def test_unknown_dataset_name_skipped(tmp_path, cfg):
     from scripts.run_experiment import build_datasets
-    cfg["datasets"] = {"acdc_night": {"enabled": True, "root": tmp_path}}
+    cfg["datasets"] = {"aihub_night": {"enabled": True, "root": tmp_path}}
     datasets, skipped = build_datasets(cfg)
-    assert datasets == [] and skipped[0]["dataset"] == "acdc_night"
+    assert datasets == [] and skipped[0]["dataset"] == "aihub_night"
+
+
+def test_build_acdc_and_darkdriving(tmp_path, cfg):
+    from scripts.run_experiment import build_datasets
+    dd = tmp_path / "Det_data" / "night" / "labels_me" / "val"
+    dd.mkdir(parents=True)
+    cfg["datasets"] = {
+        "acdc_night": {"enabled": True, "root": PROJECT_ROOT / "tests" / "fixtures" / "acdc", "splits": ["val"]},
+        "darkdriving": {"enabled": True, "root": tmp_path / "Det_data", "split": "val"},
+    }
+    datasets, skipped = build_datasets(cfg)
+    assert [d.name for d in datasets] == ["acdc_night", "darkdriving"] and skipped == []
+    assert len(datasets[0].load()) == 6
 
 
 class FailOnImage(PassThroughEnhancer):
