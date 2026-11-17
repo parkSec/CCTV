@@ -21,20 +21,45 @@ def box_iou(a: np.ndarray, b: np.ndarray) -> np.ndarray:
     return np.where(union > 0, inter / np.where(union > 0, union, 1), 0.0)
 
 
-def match_image(pred_boxes, pred_labels, pred_scores, gt_boxes, gt_labels, iou_thr: float = 0.5) -> np.ndarray:
-    """점수 내림차순 그리디 매칭. 같은 클래스 + IoU ≥ iou_thr, 정답 하나당 한 번. 반환: 예측별 TP 여부."""
+# AP50-95용 IoU 임계값 10개 (0.50 ~ 0.95, 0.05 간격)
+IOU_THRS = np.round(np.arange(0.50, 0.96, 0.05), 2)
+
+# 객체 크기 구간 (넓이, COCO 규칙: small < 32², medium < 96², large ≥ 96²)
+SMALL_MAX = 32 ** 2
+MEDIUM_MAX = 96 ** 2
+
+
+def match_image_multi(pred_boxes, pred_labels, pred_scores, gt_boxes, gt_labels,
+                      iou_thrs=IOU_THRS) -> np.ndarray:
+    """임계값마다 점수 내림차순 그리디 매칭(같은 클래스, 정답 하나당 한 번).
+    반환: (N_pred, T) 매칭된 정답 인덱스, 없으면 -1."""
     pred_labels = np.asarray(pred_labels)
     gt_labels = np.asarray(gt_labels)
-    is_tp = np.zeros(len(pred_labels), dtype=bool)
+    iou_thrs = np.atleast_1d(np.asarray(iou_thrs, dtype=np.float64))
+    out = np.full((len(pred_labels), len(iou_thrs)), -1, dtype=np.int64)
     if len(pred_labels) == 0 or len(gt_labels) == 0:
-        return is_tp
+        return out
     ious = box_iou(pred_boxes, gt_boxes)
     ious[pred_labels[:, None] != gt_labels[None, :]] = -1.0
-    used = np.zeros(len(gt_labels), dtype=bool)
-    for i in np.argsort(-np.asarray(pred_scores), kind="stable"):
-        cand = np.where(used, -1.0, ious[i])
-        j = int(np.argmax(cand))
-        if cand[j] >= iou_thr:
-            is_tp[i] = True
-            used[j] = True
-    return is_tp
+    order = np.argsort(-np.asarray(pred_scores), kind="stable")
+    for t, thr in enumerate(iou_thrs):
+        used = np.zeros(len(gt_labels), dtype=bool)
+        for i in order:
+            cand = np.where(used, -1.0, ious[i])
+            j = int(np.argmax(cand))
+            if cand[j] >= thr:
+                out[i, t] = j
+                used[j] = True
+    return out
+
+
+def size_bucket(boxes: np.ndarray) -> np.ndarray:
+    """xyxy 박스 넓이 → "small" | "medium" | "large"."""
+    b = np.asarray(boxes, dtype=np.float64).reshape(-1, 4)
+    area = np.clip(b[:, 2] - b[:, 0], 0, None) * np.clip(b[:, 3] - b[:, 1], 0, None)
+    return np.where(area < SMALL_MAX, "small", np.where(area < MEDIUM_MAX, "medium", "large"))
+
+
+def match_image(pred_boxes, pred_labels, pred_scores, gt_boxes, gt_labels, iou_thr: float = 0.5) -> np.ndarray:
+    """IoU 하나 기준 예측별 TP 여부 (match_image_multi의 한 열)."""
+    return match_image_multi(pred_boxes, pred_labels, pred_scores, gt_boxes, gt_labels, [iou_thr])[:, 0] >= 0

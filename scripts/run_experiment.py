@@ -18,7 +18,7 @@ from src.data.base import DetectionDataset, Sample, select_samples
 from src.detect.base import Detector
 from src.enhance.base import Enhancer
 from src.enhance.registry import build_enhancers
-from src.eval.matching import match_image
+from src.eval.matching import match_image_multi
 from src.eval.metrics import ImageRecord, compute_metrics
 from src.imageio import read_image, write_image
 from src.io_utils import append_jsonl, collect_env, relativize_paths, write_csv, write_json
@@ -88,7 +88,6 @@ class WarmupFailed(Exception):
 def run_condition(ds: DetectionDataset, samples: list[Sample], enh: Enhancer, det: Detector,
                   cfg: dict, out_dir: Path, excluded: list) -> tuple[list[dict], dict]:
     conf_eval = cfg["detection"]["conf_eval"]
-    iou = cfg["matching"]["iou"]
     n_save = cfg["output"]["save_samples"]
 
     first = read_image(samples[0].image_path)
@@ -108,8 +107,9 @@ def run_condition(ds: DetectionDataset, samples: list[Sample], enh: Enhancer, de
             excluded.append({"dataset": ds.name, "image_id": s.image_id, "condition": enh.name,
                              "reason": f"{type(e).__name__}: {e}"})
             continue
-        is_tp = match_image(d.boxes, d.labels, d.scores, s.boxes, s.labels, iou_thr=iou)
-        records.append(ImageRecord(s.image_id, d.labels, d.scores, is_tp, s.labels))
+        match_idx = match_image_multi(d.boxes, d.labels, d.scores, s.boxes, s.labels)
+        is_tp = match_idx[:, 0] >= 0
+        records.append(ImageRecord(s.image_id, d.boxes, d.labels, d.scores, match_idx, s.boxes, s.labels))
         enh_ms.append(t_enh)
         det_ms.append(t_det)
         above = d.scores >= conf_eval
@@ -121,8 +121,8 @@ def run_condition(ds: DetectionDataset, samples: list[Sample], enh: Enhancer, de
             write_image(p, draw_boxes(out, s, d, conf_eval))
 
     metrics = compute_metrics(records, ds.eval_classes, conf_eval)
-    rows = [{"dataset": ds.name, "condition": enh.name, "params": json.dumps(enh.params), "class": cls, **vals}
-            for cls, vals in metrics.items()]
+    rows = [{"dataset": ds.name, "condition": enh.name, "params": json.dumps(enh.params), **vals}
+            for vals in metrics]
     e, t = summarize_ms(enh_ms), summarize_ms(det_ms)
     timing = {"dataset": ds.name, "condition": enh.name,
               "enhance_ms_mean": e["mean"], "enhance_ms_median": e["median"],
