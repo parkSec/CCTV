@@ -16,3 +16,5 @@ pytest_log.txt
 *.pth
 # 개인 작업 기록
 work_history.md
+# 개인정보가 남은 원본 문서 (커밋하는 쪽은 개인정보를 지운 사본)
+*.private.md
