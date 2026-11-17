@@ -8,11 +8,15 @@ import yaml
 
 PROJECT_ROOT = Path(__file__).resolve().parent.parent
 
-REQUIRED_KEYS = ["seed", "num_samples", "datasets", "detector", "conditions"]
+REQUIRED_KEYS = ["seed", "num_samples", "datasets", "detectors", "detection", "conditions"]
 
 DEFAULTS = {
+    "preprocess": {"max_side": 1280},
     "matching": {"iou": 0.5},
-    "timing": {"warmup": 5},
+    "iqa": {"metrics_fr": ["psnr", "ssim", "lpips"],
+            "metrics_nr": ["niqe", "brisque", "musiq", "clipiqa"], "device": 0},
+    "third_party": {"root": "third_party"},
+    "timing": {"warmup": 10},
     "output": {"root": "results", "save_samples": 8},
 }
 

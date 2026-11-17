@@ -78,16 +78,15 @@ def test_smoke_run(tmp_path, cfg):
     m = pd.read_csv(out / "metrics.csv")
     row = m[(m["condition"] == "original") & (m["class"] == "all")].iloc[0]
     assert row["f1"] == 1.0 and row["dataset"] == "fake"
-    assert set(m["condition"]) == {"original", "gamma_g1.5", "gamma_g2.0", "gamma_g2.5",
-                                   "clahe_c2.0", "clahe_c3.0", "clahe_c4.0"}
+    assert set(m["condition"]) == {"original", "gamma_g1.5", "clahe_c2.0"}
     t = pd.read_csv(out / "timing.csv")
     assert (t["n_images"] == 3).all()
     meta = json.loads((out / "run_meta.json").read_text(encoding="utf-8"))
-    assert [s["condition"] for s in meta["skipped_conditions"]] == ["zerodce", "realesrgan"]
+    assert [s["condition"] for s in meta["skipped_conditions"]] == ["zerodce", "zerodcepp", "sci", "ruas", "nightenh"]
     assert meta["sample_ids"]["fake"] == ["img0", "img1", "img2"]
     assert len(list((out / "samples" / "fake" / "original").glob("*.jpg"))) == 2
     lines = (out / "per_image.jsonl").read_text(encoding="utf-8").strip().splitlines()
-    assert len(lines) == 3 * 7
+    assert len(lines) == 3 * 3
 
 
 def test_unreadable_image_excluded(tmp_path, cfg):

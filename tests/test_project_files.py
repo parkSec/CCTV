@@ -13,11 +13,11 @@ def test_requirements_is_ascii():
     assert data.isascii()
 
 
-def test_requirements_use_official_realesrgan():
-    """Real-ESRGAN은 공식 realesrgan 패키지(+basicsr)를 쓴다. Python 3.11/3.12 환경 전제."""
+def test_requirements_no_realesrgan():
+    """재설계에서 Real-ESRGAN을 뺐다. 화질 지표는 pyiqa로 잰다."""
     names = _requirement_names()
-    assert {"realesrgan", "basicsr"} <= names
-    assert "spandrel" not in names
+    assert "realesrgan" not in names and "basicsr" not in names
+    assert "pyiqa" in names
 
 
 def test_requirements_include_hf_downloader():
@@ -34,3 +34,9 @@ def test_gitignore_excludes_logs_and_weights():
     """로그(사용자 경로가 찍힘)와 가중치 파일(용량 큼)은 저장소에 올리지 않는다."""
     lines = (PROJECT_ROOT / ".gitignore").read_text(encoding="utf-8").split()
     assert "*.log" in lines and "pytest_log.txt" in lines and "*.pt" in lines and "*.pth" in lines
+
+
+def test_gitignore_has_third_party():
+    """외부 개선 모델 저장소(third_party/)는 우리 저장소에 올리지 않는다."""
+    lines = (PROJECT_ROOT / ".gitignore").read_text(encoding="utf-8").split()
+    assert "third_party/" in lines
