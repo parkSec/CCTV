@@ -1,0 +1,28 @@
+{
+  "version": "5.11.3",
+  "flags": {},
+  "shapes": [
+    {
+      "label": "car",
+      "points": [
+        [
+          1196.54568,
+          1143.865344
+        ],
+        [
+          1218.57768,
+          1165.2014080000001
+        ]
+      ],
+      "group_id": null,
+      "description": "",
+      "shape_type": "rectangle",
+      "flags": {},
+      "mask": null
+    }
+  ],
+  "imagePath": "..\\..\\images\\val\\1_1_1729239249723686400.jpg",
+  "imageData": null,
+  "imageHeight": 2048,
+  "imageWidth": 2448
+}

@@ -17,6 +17,16 @@ datasets:
     enabled: true
     images_dir: datasets/ExDark/ExDark
     annos_dir: datasets/ExDark/ExDark_Annno
+  acdc_night:
+    enabled: true
+    # acdc.vision.ee.ethz.ch: gt_detection_trainval.zip + rgb_anon_trainvaltest.zip의 night 부분
+    root: datasets/ACDC
+    splits: [train, val]   # test는 정답이 없다
+  darkdriving:
+    enabled: true
+    # github.com/DriveMindLab/DarkDriving-ICRA-2026: darkdriving_det.zip의 Det_data
+    root: datasets/DarkDriving/Det_data
+    split: val
 
 # 탐지 모델은 개선 효과를 재는 측정 도구로만 쓴다 (재학습 없음)
 detectors:
@@ -62,7 +72,8 @@ conditions:
     variant: difficult     # 가장 어두운 장면용 가중치
   - type: ruas
     repo: ruas
-    variant: dark          # 야간 DarkFace로 학습한 가중치
+    variant: upe           # 공식 가중치 3개(lol, upe, dark)를 30장×4개 데이터셋으로 비교해 고름(configs/ruas_variants.yaml).
+                           # dark·lol은 도시 야경의 가로등·노면을 하얗게 날려 탐지 AP50이 절반 가까이 떨어짐
   - type: nightenh
     repo: nightenh
     variant: delighteffects  # 헤드라이트 등 빛 번짐 억제가 이 모델을 넣은 이유

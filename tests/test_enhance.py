@@ -81,3 +81,14 @@ def test_enhance_equals_staged(enh, dark):
 def test_enhance_timed_total_covers_stages(dark):
     _, t = ClaheEnhancer(2.0, 8).enhance_timed(dark)
     assert t["total_ms"] >= t["infer_ms"]
+
+
+def test_condition_name_override():
+    enhancers, _ = build_enhancers([{"type": "gamma", "gamma": 1.5, "name": "gamma_custom"}])
+    assert enhancers[0].name == "gamma_custom"
+
+
+def test_same_type_two_names():
+    enhancers, _ = build_enhancers([{"type": "clahe", "clip_limit": 2.0, "name": "a"},
+                                    {"type": "clahe", "clip_limit": 3.0, "name": "b"}])
+    assert [e.name for e in enhancers] == ["a", "b"]

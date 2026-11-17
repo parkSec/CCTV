@@ -21,3 +21,9 @@ BDD_TO_COMMON = {
 
 # ExDark: 12개 클래스 중 도로 관련 5개만 사용 (truck 없음)
 EXDARK_TO_COMMON = {"People": 0, "Bicycle": 1, "Car": 2, "Motorbike": 3, "Bus": 4}
+
+# ACDC: COCO 형식 박스 라벨(gt_detection)의 카테고리 이름. train(열차)은 공통 클래스에 없어 버린다.
+ACDC_TO_COMMON = {"person": 0, "rider": 0, "bicycle": 1, "car": 2, "motorcycle": 3, "bus": 4, "truck": 5}
+
+# DarkDriving: labelme 라벨은 car 하나 (실제 night val 3,564개 전부 car)
+DARKDRIVING_TO_COMMON = {"car": 2, "Car": 2}
