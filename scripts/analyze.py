@@ -42,7 +42,8 @@ def plot_speed_vs_dmap(table: pd.DataFrame, path: Path, budget_ms: float = BUDGE
     fig, ax = plt.subplots(figsize=(7, 4.5), dpi=150, layout="constrained")
     ax.grid(color=GRID, linewidth=0.8)
     ax.axvline(budget_ms, color=TEXT2, linewidth=1, linestyle="--")
-    ax.text(budget_ms, ax.get_ylim()[1], f" {budget_ms}ms (30fps)", color=TEXT2, fontsize=8, va="top")
+    ax.text(budget_ms, 0.98, f" {budget_ms}ms (30fps)", color=TEXT2, fontsize=8, va="top",
+            transform=ax.get_xaxis_transform())   # y는 축 높이 기준 → 데이터 범위와 무관
     ax.axhline(0, color=TEXT2, linewidth=0.8)
     ax.scatter(table["total_ms"], table["mean_d_ap50"], s=40, color=BLUE, edgecolor=SURFACE, linewidth=2, zorder=3)
     for _, r in table.iterrows():   # 점마다 조건 이름 (색이 아니라 글자로 구분)
