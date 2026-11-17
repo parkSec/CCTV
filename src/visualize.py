@@ -47,7 +47,9 @@ def compare_frame(img: np.ndarray, enhancers: list, detector, conf_eval: float, 
                   gt_boxes=None) -> tuple[np.ndarray, list[dict]]:
     """(격자 이미지, 조건별 {condition, enh_ms, n_det})."""
     tiles, rows = [], []
+    detector.detect(img)   # 탐지기도 미리 한 번
     for enh in enhancers:
+        enh.enhance(img)   # 첫 호출 준비 비용(CUDA 초기화 등)이 표시 시간에 들어가지 않게 한 번 미리 돌린다
         out, t = enh.enhance_timed(img)
         det = detector.detect(out)
         n = int((det.scores >= conf_eval).sum())
