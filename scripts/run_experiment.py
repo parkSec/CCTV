@@ -30,7 +30,7 @@ from src.eval.matching import match_image_multi
 from src.eval.metrics import ImageRecord, compute_metrics
 from src.imageio import read_image, write_image
 from src.io_utils import append_jsonl, collect_env, relativize_paths, write_csv, write_json
-from src.timing import gpu_peak_mb, reset_gpu_peak, summarize_ms, timed
+from src.timing import gpu_allocated_mb, gpu_peak_mb, reset_gpu_peak, summarize_ms, timed
 
 REQUIRED_PATHS = {"bdd100k": ["labels_json", "images_dir"], "exdark": ["images_dir", "annos_dir"]}
 ENH_KEYS = ("pre_ms", "infer_ms", "post_ms", "total_ms")
@@ -148,7 +148,8 @@ class WarmupFailed(Exception):
 
 def run_condition(ds: DetectionDataset, samples: list[Sample], enh: Enhancer, detectors: list[Detector],
                   iqa, cfg: dict, out_dir: Path, failures: list) -> dict:
-    """{"images": {image_id: 결과}, "gpu_peak_mb": ...}. 실패한 이미지는 failures에 넣고 결과에서 뺀다."""
+    """{"images": {image_id: 결과}, "gpu_peak_mb": 개선 단계 GPU 메모리 증가 최대치(MB, CUDA 없으면 None)}.
+    실패한 이미지는 failures에 넣고 결과에서 뺀다."""
     max_side = cfg["preprocess"]["max_side"]
     conf_eval = cfg["detection"]["conf_eval"]
     n_save = cfg["output"]["save_samples"]
@@ -162,12 +163,17 @@ def run_condition(ds: DetectionDataset, samples: list[Sample], enh: Enhancer, de
     except Exception as e:
         raise WarmupFailed(f"워밍업 실패 — {type(e).__name__}: {e}") from e
 
-    reset_gpu_peak()
-    images = {}
+    images, peak = {}, None
     for i, s0 in enumerate(samples):
         img, s, ref = load_prepared(s0, max_side)
         try:
+            # GPU 메모리는 개선 단계에서 늘어난 최대치만 잰다 (탐지·화질 지표 모델이 잡은 메모리는 뺌)
+            reset_gpu_peak()
+            before = gpu_allocated_mb()
             out, t_enh = enhance_with_retry(enh, img)
+            after = gpu_peak_mb()
+            if before is not None and after is not None:
+                peak = max(peak or 0.0, after - before)
             scores = iqa.score(out, ref) if iqa is not None else {}
             dets = {}
             for det in detectors:
@@ -190,7 +196,7 @@ def run_condition(ds: DetectionDataset, samples: list[Sample], enh: Enhancer, de
             _, d0, _ = next(iter(dets.values()))   # 첫 번째 탐지 설정(기준 설정) 결과를 그린다
             p = out_dir / "samples" / ds.name / enh.name / f"{_safe_name(s.image_id)}.jpg"
             write_image(p, draw_boxes(out, s, d0, conf_eval))
-    return {"images": images, "gpu_peak_mb": gpu_peak_mb()}
+    return {"images": images, "gpu_peak_mb": peak}
 
 
 # ---------------------------------------------------------------- 집계
