@@ -15,6 +15,7 @@ class Sample:
     image_path: Path
     boxes: np.ndarray   # (N, 4) float32, xyxy 픽셀 좌표
     labels: np.ndarray  # (N,) int64, 공통 클래스 id
+    ref_path: Path | None = None  # 정렬된 낮 이미지 (정답 기반 화질 지표용, DarkDriving)
 
 
 class DetectionDataset(ABC):
@@ -26,12 +27,13 @@ class DetectionDataset(ABC):
         ...
 
 
-def make_sample(image_id: str, image_path: Path, boxes: list, labels: list) -> Sample:
+def make_sample(image_id: str, image_path: Path, boxes: list, labels: list, ref_path: Path | None = None) -> Sample:
     return Sample(
         image_id=image_id,
         image_path=image_path,
         boxes=np.asarray(boxes, dtype=np.float32).reshape(-1, 4),
         labels=np.asarray(labels, dtype=np.int64).reshape(-1),
+        ref_path=ref_path,
     )
 
 
