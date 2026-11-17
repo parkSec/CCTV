@@ -1,4 +1,4 @@
-# Python 3.11 or 3.12 required (basicsr cannot be installed on Python 3.13+).
+# Python 3.11 or 3.12 recommended.
 # Install PyTorch (CUDA build) first, then: pip install -r requirements.txt
 # Keep this file ASCII-only: pip on Korean Windows reads it as cp949.
 numpy
@@ -11,6 +11,4 @@ ultralytics>=8.4.0
 streamlit
 huggingface_hub   # scripts/download_bdd100k_hf.py
 gdown             # scripts/download_exdark.py
-# Phase 2 (Real-ESRGAN, official package)
-realesrgan
-basicsr
+pyiqa             # image quality metrics (psnr, ssim, lpips, niqe, brisque, musiq, clipiqa)

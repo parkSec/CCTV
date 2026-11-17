@@ -5,6 +5,8 @@ datasets/
 weights/
 results/
 runs/
+# 외부 개선 모델 공식 저장소 (scripts/fetch_third_party.py로 받음)
+third_party/
 .venv/
 # 로그에는 사용자 이름이 담긴 경로가 찍히므로 올리지 않는다
 *.log

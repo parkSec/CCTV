@@ -41,19 +41,25 @@ def test_names():
     assert ClaheEnhancer(2.0).name == "clahe_c2.0"
 
 
-def test_build_enhancers_expands_sweep(tmp_path):
+def test_build_enhancers_expands_sweep():
+    enhancers, skipped = build_enhancers([{"type": "gamma", "sweep": {"gamma": [1.5, 2.0]}}])
+    assert [e.name for e in enhancers] == ["gamma_g1.5", "gamma_g2.0"]
+    assert skipped == []
+
+
+def test_build_default_conditions(tmp_path):
     cfg = load_config(PROJECT_ROOT / "configs" / "default.yaml")
     # 가중치가 PC에 있든 없든 같은 결과가 나오도록, 딥러닝 기법은 없는 경로를 가리키게 한다
     for c in cfg["conditions"]:
         if "weights" in c:
             c["weights"] = tmp_path / "missing.pth"
     enhancers, skipped = build_enhancers(cfg["conditions"])
-    assert [e.name for e in enhancers] == [
-        "original", "gamma_g1.5", "gamma_g2.0", "gamma_g2.5", "clahe_c2.0", "clahe_c3.0", "clahe_c4.0"]
-    assert [s["condition"] for s in skipped] == ["zerodce", "realesrgan"]
+    assert [e.name for e in enhancers] == ["original", "gamma_g1.5", "clahe_c2.0"]
+    assert [s["condition"] for s in skipped] == ["zerodce", "zerodcepp", "sci", "ruas", "nightenh"]
     assert all(s["reason"] for s in skipped)
 
 
-def test_unknown_type_raises():
-    with pytest.raises(ValueError):
-        build_enhancers([{"type": "magic"}])
+def test_unknown_type_skipped():
+    enhancers, skipped = build_enhancers([{"type": "magic"}])
+    assert enhancers == []
+    assert skipped[0]["condition"] == "magic" and "magic" in skipped[0]["reason"]

@@ -1,6 +1,9 @@
-# 실험 조건 (스펙 5장). 상대 경로는 프로젝트 루트 기준.
+# 실험 조건 (재설계 스펙 2026-11-12). 상대 경로는 프로젝트 루트 기준.
 seed: 42
 num_samples: 300
+
+preprocess:
+  max_side: 1280   # 모든 이미지는 긴 변을 이 값 이하로 줄인다 (정답 박스도 같은 비율)
 
 datasets:
   bdd100k:
@@ -15,9 +18,17 @@ datasets:
     images_dir: datasets/ExDark/ExDark
     annos_dir: datasets/ExDark/ExDark_Annno
 
-detector:
-  weights: weights/yolo26s.pt
-  imgsz: 640
+# 탐지 모델은 개선 효과를 재는 측정 도구로만 쓴다 (재학습 없음)
+detectors:
+  - name: yolo26s_bdd
+    weights: weights/bdd100k-yolo26s.pt
+    hf_repo: dronefreak/bdd100k-yolo26s
+  - name: yolo26m_bdd
+    weights: weights/bdd100k-yolo26m.pt
+    hf_repo: dronefreak/bdd100k-yolo26m
+
+detection:
+  imgsz: [640, 960]
   conf_eval: 0.25   # P/R/F1 기준
   conf_min: 0.001   # AP 계산용으로 낮게 받음
   device: 0
@@ -25,27 +36,39 @@ detector:
 matching:
   iou: 0.5
 
+iqa:
+  metrics_fr: [psnr, ssim, lpips]            # 정답(정렬된 낮 이미지) 기반, DarkDriving만
+  metrics_nr: [niqe, brisque, musiq, clipiqa] # 정답 없음, 모든 데이터셋
+  device: 0
+
+third_party:
+  root: third_party   # 외부 개선 모델 공식 저장소 (python -m scripts.fetch_third_party)
+
 conditions:
   - type: original
   - type: gamma
-    sweep:
-      gamma: [1.5, 2.0, 2.5]
+    gamma: 1.5
   - type: clahe
+    clip_limit: 2.0
     tile_grid: 8
-    sweep:
-      clip_limit: [2.0, 3.0, 4.0]
-  - type: zerodce
+  - type: zerodce          # Zero-DCE 원본 (Guo et al., CVPR 2020)
+    repo: zerodce
+    weights: third_party/zerodce/Zero-DCE_code/snapshots/Epoch99.pth
+  - type: zerodcepp        # Zero-DCE++ (Li et al., TPAMI 2021)
     weights: weights/Epoch99.pth
-    scale_factor: 1   # 논문 기본값은 12 (더 빠름). 스펙에 따라 1 사용
-  - type: realesrgan
-    weights: weights/RealESRGAN_x2plus.pth
-    scale: 2
-    tile: 400
-    min_tile: 128
-    half: true
+    scale_factor: 1        # 논문 기본값은 12 (더 빠름). 스펙에 따라 1 사용
+  - type: sci
+    repo: sci
+    variant: difficult     # 가장 어두운 장면용 가중치
+  - type: ruas
+    repo: ruas
+    variant: dark          # 야간 DarkFace로 학습한 가중치
+  - type: nightenh
+    repo: nightenh
+    variant: delighteffects  # 헤드라이트 등 빛 번짐 억제가 이 모델을 넣은 이유
 
 timing:
-  warmup: 5
+  warmup: 10
 
 output:
   root: results

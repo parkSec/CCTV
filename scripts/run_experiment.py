@@ -51,8 +51,9 @@ def build_datasets(cfg: dict) -> list[DetectionDataset]:
 
 def build_detector(cfg: dict) -> Detector:
     from src.detect.yolo import YoloDetector
-    d = cfg["detector"]
-    return YoloDetector(d["weights"], imgsz=d["imgsz"], conf=d["conf_min"], device=d.get("device", 0))
+    # Task 15 전까지는 첫 번째 탐지 모델, 첫 번째 입력 크기만 쓴다
+    d, det = cfg["detectors"][0], cfg["detection"]
+    return YoloDetector(d["weights"], imgsz=det["imgsz"][0], conf=det["conf_min"], device=det.get("device", 0))
 
 
 def _safe_name(image_id: str) -> str:
@@ -86,7 +87,7 @@ class WarmupFailed(Exception):
 
 def run_condition(ds: DetectionDataset, samples: list[Sample], enh: Enhancer, det: Detector,
                   cfg: dict, out_dir: Path, excluded: list) -> tuple[list[dict], dict]:
-    conf_eval = cfg["detector"]["conf_eval"]
+    conf_eval = cfg["detection"]["conf_eval"]
     iou = cfg["matching"]["iou"]
     n_save = cfg["output"]["save_samples"]
 

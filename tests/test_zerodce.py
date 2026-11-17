@@ -24,7 +24,7 @@ def test_pad_to_multiple_noop_when_divisible():
 
 
 def test_missing_weights_skipped(tmp_path):
-    enh, skipped = build_enhancers([{"type": "zerodce", "weights": tmp_path / "none.pth", "scale_factor": 1}])
+    enh, skipped = build_enhancers([{"type": "zerodcepp", "weights": tmp_path / "none.pth", "scale_factor": 1}])
     assert enh == []
     assert "none.pth" in skipped[0]["reason"]
 
@@ -33,7 +33,7 @@ def test_missing_weights_skipped(tmp_path):
 def test_without_torch_skipped(tmp_path):
     w = tmp_path / "Epoch99.pth"
     w.write_bytes(b"x")
-    enh, skipped = build_enhancers([{"type": "zerodce", "weights": w}])
+    enh, skipped = build_enhancers([{"type": "zerodcepp", "weights": w}])
     assert enh == [] and "torch" in skipped[0]["reason"]
 
 
