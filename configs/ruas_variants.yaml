@@ -1,0 +1,19 @@
+# RUAS 가중치 비교: 공식 가중치 3개(lol, upe, dark)를 같은 이미지로 비교한다.
+# 5장 시험 실행에서 dark가 도시 야경을 크게 과노출시켜 탐지가 절반으로 떨어져서, 어떤 가중치를 쓸지 정하려는 실험.
+# 실행: python -m scripts.run_experiment --config configs/ruas_variants.yaml
+base: default.yaml
+num_samples: 30
+conditions:
+  - type: original
+  - type: ruas
+    repo: ruas
+    variant: lol      # LOL(실내 저조도)로 학습
+    name: ruas_lol
+  - type: ruas
+    repo: ruas
+    variant: upe      # MIT-Adobe FiveK 기반 UPE로 학습
+    name: ruas_upe
+  - type: ruas
+    repo: ruas
+    variant: dark     # DarkFace(아주 어두운 야간)로 학습 — 지금 기본값
+    name: ruas_dark

@@ -74,7 +74,10 @@ def build_enhancers(conditions: list[dict], third_party_root: Path | None = None
             continue
         for c in _expand(cond):
             try:
-                enhancers.append(builders[ctype](c))
+                enh = builders[ctype](c)
+                if c.get("name"):   # 같은 모델을 설정만 바꿔 여러 조건으로 넣을 때 (예: ruas_lol, ruas_dark)
+                    enh.name = c["name"]
+                enhancers.append(enh)
             except EnhancerUnavailable as e:
                 skipped.append({"condition": ctype, "reason": str(e)})
     return enhancers, skipped

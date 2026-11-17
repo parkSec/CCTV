@@ -61,3 +61,40 @@ def test_missing_detectors_raises(tmp_path):
     bad.write_text(text[:start] + text[end + 1:], encoding="utf-8")
     with pytest.raises(ConfigError):
         load_config(bad)
+
+
+def test_new_datasets_in_config():
+    cfg = load_config(DEFAULT)
+    assert cfg["datasets"]["acdc_night"]["root"] == PROJECT_ROOT / "datasets/ACDC"
+    assert cfg["datasets"]["acdc_night"]["splits"] == ["train", "val"]
+    assert cfg["datasets"]["darkdriving"]["root"] == PROJECT_ROOT / "datasets/DarkDriving/Det_data"
+    assert cfg["datasets"]["darkdriving"]["split"] == "val"
+
+
+def test_base_config_inherits_and_overrides(tmp_path):
+    p = tmp_path / "child.yaml"
+    p.write_text(f"base: {DEFAULT.as_posix()}\nnum_samples: 30\nconditions:\n  - type: original\n", encoding="utf-8")
+    cfg = load_config(p)
+    assert cfg["num_samples"] == 30 and [c["type"] for c in cfg["conditions"]] == ["original"]
+    assert cfg["detection"]["imgsz"] == [640, 960]            # 기본 설정에서 이어받음
+    assert cfg["datasets"]["bdd100k"]["images_dir"] == PROJECT_ROOT / "datasets/bdd100k_hf"
+    assert "base" not in cfg
+
+
+def test_base_relative_to_child(tmp_path):
+    (tmp_path / "parent.yaml").write_text(DEFAULT.read_text(encoding="utf-8"), encoding="utf-8")
+    p = tmp_path / "child.yaml"
+    p.write_text("base: parent.yaml\nseed: 7\n", encoding="utf-8")
+    assert load_config(p)["seed"] == 7
+
+
+def test_ruas_variants_config():
+    cfg = load_config(PROJECT_ROOT / "configs" / "ruas_variants.yaml")
+    assert [(c["type"], c.get("variant"), c.get("name")) for c in cfg["conditions"]] == [
+        ("original", None, None), ("ruas", "lol", "ruas_lol"), ("ruas", "upe", "ruas_upe"), ("ruas", "dark", "ruas_dark")]
+    assert cfg["num_samples"] == 30
+
+
+def test_ruas_uses_upe_weights():
+    cfg = load_config(DEFAULT)
+    assert next(c for c in cfg["conditions"] if c["type"] == "ruas")["variant"] == "upe"
