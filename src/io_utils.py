@@ -21,7 +21,7 @@ def relativize_paths(obj, root: Path, home: Path | None = None):
                 return prefix + obj.relative_to(base).as_posix()
             except ValueError:
                 continue
-        return str(obj)
+        return obj.as_posix()
     if isinstance(obj, str):
         # 문장 속 경로: 프로젝트 경로를 먼저 지우고(프로젝트가 홈 안에 있을 수 있으므로), 그다음 홈을 '~'로
         for base, repl in ((str(root), "."), (str(home), "~")):
