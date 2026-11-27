@@ -7,6 +7,7 @@
 |---|---|
 | **README.md** (이 문서) | 프로젝트 소개, 설치와 실행 방법 |
 | [**RESULTS_enhancement.md**](RESULTS_enhancement.md) | 현재 실험(개선 모델 7개 × 데이터셋 4개) 결과, 분석, 한계 |
+| [**RESULTS_traditional.md**](RESULTS_traditional.md) | 전통 기법 8개 비교와 파라미터 비교 결과 |
 | [RESULTS.md](RESULTS.md) · [RESULTS_summary.pdf](RESULTS_summary.pdf) | 1차 실험(COCO YOLO26s, 데이터셋 2개) 기록 |
 | [docs/](docs/) | 설계 문서, 구현 계획 |
 
@@ -80,6 +81,26 @@ BDD100K로 학습된 YOLO26s·YOLO26m(Hugging Face `dronefreak/bdd100k-yolo26s`,
 - 선택 규칙대로 고르면 **빠른 모델은 CLAHE, 확실한 모델은 Gamma**입니다. 하지만 두 기법 모두 평균 효과는 0에 가깝습니다.
 - 딥러닝 모델 5개는 탐지 설정 4개 모두에서 평균 AP50이 떨어졌습니다.
 - 화질 지표가 좋아져도 탐지가 좋아지지는 않았습니다. 지표와 탐지 변화의 상관은 데이터셋마다 방향이 달랐습니다.
+
+### 전통 기법 비교
+
+> 전체 표와 분석은 [RESULTS_traditional.md](RESULTS_traditional.md)에 있습니다. (실험 번호 `20261127-115620`)
+
+전통 기법 8개를 같은 조건으로 비교한 결과입니다(평균 ΔAP50, yolo26s 640).
+
+| 기법 | 평균 ΔAP50 | 개선 시간 (장당) |
+|---|---:|---:|
+| CLAHE (clip 2.0) | +0.0045 | 약 10~14ms |
+| Gamma (γ1.5) | +0.0006 | 약 1ms |
+| BIMEF | −0.002 | 약 1.1초 |
+| AGCWD (α0.5) | −0.005 | 약 5~7ms |
+| Dong | −0.049 | 약 0.19초 |
+| MSRCR | −0.070 | 약 0.21초 |
+| LIME | −0.075 | 약 2.4초 |
+| HE | −0.088 | 약 11ms |
+
+- 많이 밝히는 기법(HE, LIME, MSRCR, Dong)은 어두운 부분의 잡음까지 키워서 탐지가 떨어졌습니다. 화질 점수(NIQE, PSNR)는 오히려 가장 좋았습니다.
+- 파라미터를 바꿔 보니 보정을 약하게 할수록 나았습니다. **Gamma γ1.2(+0.0072)**와 **CLAHE clip 1.0(+0.0075)**이 가장 좋았고, 이 둘을 각각 확실한 모델과 빠른 모델로 추천합니다. 다만 효과는 AP50 +0.01 미만입니다.
 
 ---
 
@@ -158,6 +179,10 @@ python -m scripts.analyze results/<run_id>
 
 # RUAS 가중치 3개(lol, upe, dark) 비교 실험
 python -m scripts.run_experiment --config configs/ruas_variants.yaml
+
+# 전통 기법 8개 비교 (약 2시간 40분, LIME·BIMEF가 대부분), 감마·CLAHE·AGCWD 파라미터 비교
+python -m scripts.run_experiment --config configs/traditional.yaml
+python -m scripts.run_experiment --config configs/traditional_sweep.yaml
 ```
 
 ### 3-5. 결과 파일
@@ -194,13 +219,16 @@ python -m scripts.compare_frame --input 영상.mp4 --frame 120 --out results/com
 CCTV/
 ├─ README.md                  # 소개, 설치·실행 방법 (이 문서)
 ├─ RESULTS_enhancement.md     # 현재 실험 결과와 분석
+├─ RESULTS_traditional.md     # 전통 기법 비교 결과
 ├─ RESULTS.md                 # 1차 실험 기록
 ├─ configs/
 │   ├─ default.yaml           # 실험 조건 (데이터셋 경로, 표본 수, 탐지 설정, 개선 조건)
-│   └─ ruas_variants.yaml     # RUAS 가중치 비교 (default.yaml을 물려받음)
+│   ├─ ruas_variants.yaml     # RUAS 가중치 비교 (default.yaml을 물려받음)
+│   ├─ traditional.yaml       # 전통 기법 8개 비교
+│   └─ traditional_sweep.yaml # 감마·CLAHE·AGCWD 파라미터 비교
 ├─ src/
 │   ├─ data/                  # BDD100K, ExDark, ACDC, DarkDriving 불러오기 + 클래스 통일, 리사이즈
-│   ├─ enhance/               # Gamma, CLAHE, Zero-DCE, Zero-DCE++, SCI, RUAS, Night-Enhancement
+│   ├─ enhance/               # Gamma, CLAHE, 전통 기법(HE·AGCWD·MSRCR·LIME·Dong·BIMEF), 딥러닝 모델 5개
 │   ├─ detect/                # YOLO26
 │   ├─ eval/                  # 박스 매칭, P/R/F1·AP, 화질 지표, 분석
 │   ├─ timing.py              # 시간 측정
@@ -222,6 +250,7 @@ CCTV/
 ### 출처와 라이선스
 
 - **개선 모델:** Zero-DCE(Guo et al., CVPR 2020), Zero-DCE++(Li et al., TPAMI 2021), SCI(Ma et al., CVPR 2022), RUAS(Liu et al., CVPR 2021), Night-Enhancement(Jin et al., ECCV 2022). 각 공식 저장소의 라이선스를 따르며, Zero-DCE 계열은 비상업적 연구 목적으로만 사용할 수 있습니다.
+- **전통 기법:** HE, CLAHE, AGCWD(Huang et al., TIP 2013), MSRCR(Jobson et al., TIP 1997), LIME(Guo et al., TIP 2017), Dong(ICME 2011), BIMEF(Ying et al., 2017). 논문 식을 보고 직접 구현했습니다(`src/enhance/traditional.py`).
 - **데이터셋:** BDD100K(Yu et al., CVPR 2020, Hugging Face 재배포본 `dgural/bdd100k`), ExDark(Loh & Chan, CVIU 2019), ACDC(Sakaridis et al., ICCV 2021, 비상업 연구용), DarkDriving(Wang et al., ICRA 2026, 학술·비상업 용도).
 - **탐지 모델:** Ultralytics YOLO26 (AGPL-3.0), BDD100K 학습 가중치 `dronefreak/bdd100k-yolo26s`, `-yolo26m`.
 - **화질 지표:** pyiqa (chaofengc/IQA-PyTorch).

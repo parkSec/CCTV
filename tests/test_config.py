@@ -117,3 +117,16 @@ def test_traditional_config_builds_without_skips():
     assert skipped == []
     assert [e.name for e in enhancers] == [
         "original", "gamma_g1.5", "clahe_c2.0", "he", "agcwd_a0.5", "msrcr", "lime", "dong", "bimef"]
+
+
+def test_traditional_sweep_config_builds_unique_conditions():
+    from src.enhance.registry import build_enhancers
+    cfg = load_config(PROJECT_ROOT / "configs" / "traditional_sweep.yaml")
+    enhancers, skipped = build_enhancers(cfg["conditions"])
+    assert skipped == []
+    assert [e.name for e in enhancers] == [
+        "original", "gamma_g1.2", "gamma_g1.5", "gamma_g2.0", "gamma_g2.5",
+        "clahe_c1.0", "clahe_c2.0", "clahe_c4.0", "agcwd_a0.25", "agcwd_a0.5", "agcwd_a0.75"]
+    base = load_config(DEFAULT)
+    for key in ["seed", "num_samples", "datasets", "detectors", "detection", "iqa", "preprocess"]:
+        assert cfg[key] == base[key], key

@@ -1,0 +1,18 @@
+# 전통 기법 파라미터 비교: traditional.yaml에서 원본보다 나빠지지 않은 빠른 기법 3개(감마, CLAHE, AGCWD)만
+# 값을 바꿔 가며 돌린다. 1차 값(γ 1.5, clip 2.0, α 0.5)은 정해 둔 값이라, 더 나은 값이 있는지 보려는 실험.
+# 느린 기법(BIMEF, LIME, Dong, MSRCR)과 HE는 평균 ΔAP50이 음수라 뺐다.
+# 1차 값도 같이 넣어 같은 실행 안에서 비교한다 (결과가 traditional.yaml과 같은지도 함께 확인).
+# 실행: python -m scripts.run_experiment --config configs/traditional_sweep.yaml
+base: default.yaml
+conditions:
+  - type: original
+  - type: gamma            # 클수록 어두운 부분을 더 밝힘
+    sweep:
+      gamma: [1.2, 1.5, 2.0, 2.5]
+  - type: clahe            # 클수록 대비를 더 세게 늘림 (잡음도 커짐)
+    tile_grid: 8
+    sweep:
+      clip_limit: [1.0, 2.0, 4.0]
+  - type: agcwd            # 작을수록 어두운 쪽 감마 보정이 강함
+    sweep:
+      alpha: [0.25, 0.5, 0.75]
