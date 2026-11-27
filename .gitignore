@@ -18,3 +18,8 @@ pytest_log.txt
 work_history.md
 # 개인정보가 남은 원본 문서 (커밋하는 쪽은 개인정보를 지운 사본)
 *.private.md
+
+# 문서는 저장소에 올리지 않는다 (요약_수정.pdf만 올림, 파일은 로컬에 둠)
+*.md
+*.pdf
+!reports/3_전통기법/요약_수정.pdf
