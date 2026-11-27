@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** 야간 차량 카메라 이미지에 화질 개선 모델 7개를 적용하고, 탐지(BDD YOLO26s·m × 640·960)·화질 지표 7개·처리 시간으로 비교해 빠른 모델과 확실한 모델을 뽑는 배치 실험과 결과물(비교 이미지, 웹 화면)을 만든다.
+**Goal:** 야간 차량 카메라 이미지에 화질 개선 모델 7개를 적용하고 탐지(BDD YOLO26s·m × 640·960)·화질 지표 7개·처리 시간으로 비교해 빠른 모델과 확실한 모델을 뽑는 배치 실험과 결과물(비교 이미지, 웹 화면)을 만든다.
 
-**Architecture:** 기존 배치 실험 구조(src 단위 모듈 + `scripts/run_experiment.py`)를 유지한다. 개선된 이미지는 조건마다 한 번 만들고, 탐지 4회와 화질 지표에 같이 쓴다. 외부 개선 모델은 공식 저장소를 `third_party/`에 받아 모델 클래스만 불러온다(git 제외).
+**Architecture:** 기존 배치 실험 구조(src 단위 모듈 + `scripts/run_experiment.py`)를 유지한다. 개선된 이미지는 조건마다 한 번 만들고 탐지 4회와 화질 지표에 같이 쓴다. 외부 개선 모델은 공식 저장소를 `third_party/`에 받아 모델 클래스만 불러온다(git 제외).
 
 **Tech Stack:** Python 3.11, PyTorch(CUDA), Ultralytics YOLO26, OpenCV, pyiqa, pandas, matplotlib, Streamlit, pytest
 
@@ -15,7 +15,7 @@
 - 개선 조건 8개: `original`, `gamma`(γ=1.5), `clahe`(clip 2.0, tile 8), `zerodce`, `zerodcepp`, `sci`, `ruas`, `nightenh`. PairLIE·CLIP-LIT·Real-ESRGAN은 넣지 않는다.
 - 탐지 모델: `dronefreak/bdd100k-yolo26s`, `dronefreak/bdd100k-yolo26m`. 입력 크기 640, 960. 재학습 없음. COCO YOLO26s 기준선 없음.
 - 공통 클래스 6개: person, bicycle, car, motorcycle, bus, truck (`src/data/classes.py`에서만 관리)
-- 모든 이미지는 긴 변 1280px 이하로 줄이고, 정답 박스도 같은 비율로 줄인다 (`preprocess.max_side: 1280`)
+- 모든 이미지는 긴 변 1280px 이하로 줄이고 정답 박스도 같은 비율로 줄인다 (`preprocess.max_side: 1280`)
 - 탐지 평가: conf 0.25(P/R/F1), conf_min 0.001(AP), IoU 0.5, AP50-95는 IoU 0.50~0.95를 0.05 간격(10개)
 - 객체 크기: 소 < 32², 중 32²~96², 대 > 96² (줄인 뒤 해상도 기준 넓이)
 - 화질 지표 pyiqa 이름: `psnr`, `ssim`, `lpips`(정답 기반, DarkDriving만), `niqe`, `brisque`, `musiq`, `clipiqa`(정답 없음, 전부)
@@ -31,8 +31,8 @@
 1. 외부 저장소 여러 개가 모두 `model.py`라는 같은 이름의 모듈을 갖는다 → 나중에 불러온 모델이 앞의 모델을 덮어쓰면 안 된다 (Task 6)
 2. 개선 모델이 패딩·다운샘플을 쓰는데 홀수 크기(예: 721×1281) 이미지가 들어온다 → 출력 크기가 입력과 정확히 같아야 박스가 어긋나지 않는다 (Task 3의 계약 테스트, Task 7~10이 사용)
 3. 흑백 이미지나 투명 채널이 있는 PNG가 들어온다 (ExDark에 섞여 있음) → 3채널 BGR로 바꿔 처리해야 한다 (Task 2)
-4. 특정 클래스나 특정 크기 구간에 정답이 0개다 → AP가 NaN이 되거나 평균을 끌어내리면 안 되고, n_gt=0으로 기록하고 평균에서 빼야 한다 (Task 5)
-5. 아주 어둡거나 단색인 원본 이미지에서 NIQE·BRISQUE가 NaN/inf를 낸다 → 그 값은 NaN으로 기록하고, 평균에서 빼되 뺀 개수를 남겨야 한다 (Task 14)
+4. 특정 클래스나 특정 크기 구간에 정답이 0개다 → AP가 NaN이 되거나 평균을 끌어내리면 안 되고 n_gt=0으로 기록하고 평균에서 빼야 한다 (Task 5)
+5. 아주 어둡거나 단색인 원본 이미지에서 NIQE·BRISQUE가 NaN/inf를 낸다 → 그 값은 NaN으로 기록하고 평균에서 빼되 뺀 개수를 남겨야 한다 (Task 14)
 
 ---
 
@@ -59,7 +59,7 @@
     - 변형 기본값 이유(주석으로 남김): SCI `difficult` = 가장 어두운 장면용, RUAS `dark` = 야간 DarkFace로 학습, Night-Enhancement `delighteffects` = 헤드라이트 등 빛 번짐 억제가 이 모델을 넣은 이유
   - `detectors`: `yolo26s_bdd`(weights `weights/bdd100k-yolo26s.pt`, hf_repo `dronefreak/bdd100k-yolo26s`), `yolo26m_bdd`(weights `weights/bdd100k-yolo26m.pt`, hf_repo `dronefreak/bdd100k-yolo26m`)
   - `src/config.py`: `REQUIRED_KEYS`를 `["seed", "num_samples", "datasets", "detectors", "detection", "conditions"]`로, `DEFAULTS`에 `preprocess.max_side=1280`, `timing.warmup=10`, `third_party.root="third_party"`, `iqa`(위 목록, device 0). `PATH_KEYS`에 `"root"`는 이미 있음 → `third_party.root`도 절대 경로가 되는지 확인
-  - `registry.py`에서 realesrgan 빌더 삭제. 아직 없는 `zerodcepp`, `sci`, `ruas`, `nightenh` 빌더는 Task 3·7~10에서 추가하므로, 이 태스크에서는 `BUILDERS`에 없는 type이면 지금처럼 오류 대신 **`skipped`에 "아직 구현되지 않음"으로 넣는다**
+  - `registry.py`에서 realesrgan 빌더 삭제. 아직 없는 `zerodcepp`, `sci`, `ruas`, `nightenh` 빌더는 Task 3·7~10에서 추가하므로 이 태스크에서는 `BUILDERS`에 없는 type이면 지금처럼 오류 대신 **`skipped`에 "아직 구현되지 않음"으로 넣는다**
   - `requirements.txt`: `realesrgan`, `basicsr` 줄 삭제, `pyiqa` 추가. 첫 줄 주석의 basicsr 문구 삭제
   - `.gitignore`: `third_party/` 추가
 - [ ] **Step 4: 통과 확인** — `pytest -q` 전체 → PASS (realesrgan 관련 테스트는 파일째 삭제됨)
@@ -100,12 +100,12 @@
   - `Enhancer` 추상 메서드 3개: `preprocess(img: np.ndarray) -> Any`, `infer(x: Any) -> Any`, `postprocess(y: Any, img_shape: tuple[int, int]) -> np.ndarray`. 공통 메서드 `enhance(img) -> np.ndarray`(세 단계를 이어 부름), `enhance_timed(img) -> tuple[np.ndarray, dict[str, float]]`(키 `pre_ms`, `infer_ms`, `post_ms`, `total_ms`; `uses_cuda`이면 단계마다 CUDA 동기화)
   - 전통 기법(gamma, clahe, original): preprocess/postprocess는 그대로 넘기고 계산은 infer에서
   - `ZeroDCEPPEnhancer` (기존 `ZeroDCEEnhancer`를 이 이름으로 바꿈, 조건 `zerodcepp`)
-  - `tests/enhancer_contract.py`: `assert_enhancer_contract(enh: Enhancer) -> None` — 721×1281 랜덤 uint8 BGR 입력에 대해 출력 shape·dtype이 입력과 같고 `enhance_timed`의 네 키가 0 이상인지 확인. Task 7~10이 사용
+  - `tests/enhancer_contract.py`: `assert_enhancer_contract(enh: Enhancer) -> None` — 721×1281 랜덤 uint8 BGR 입력을 넣어 출력 shape·dtype이 입력과 같고 `enhance_timed`의 네 키가 0 이상인지 확인. Task 7~10이 사용
   - `src/timing.py`: `summarize_ms`가 `p95`도 돌려준다; `gpu_peak_mb() -> float | None`, `reset_gpu_peak() -> None` (torch·CUDA 없으면 None / 아무것도 안 함)
 
 - [ ] **Step 1: 실패하는 테스트 작성**
   - `test_enhance.py`: `assert_enhancer_contract(GammaEnhancer(1.5))`, `ClaheEnhancer(2.0, 8)`, `IdentityEnhancer()`; `test_enhance_equals_staged`: `enh.enhance(img)`와 `enh.postprocess(enh.infer(enh.preprocess(img)), img.shape[:2])`가 같은 배열
-  - `test_zerodce.py`: 기존 테스트의 클래스 이름을 `ZeroDCEPPEnhancer`로 바꾸고, 가중치가 있을 때만 `assert_enhancer_contract`
+  - `test_zerodce.py`: 기존 테스트의 클래스 이름을 `ZeroDCEPPEnhancer`로 바꾸고 가중치가 있을 때만 `assert_enhancer_contract`
   - `test_timing.py`: `summarize_ms([1,2,3,4,100])["p95"]`가 `numpy.percentile(..., 95)`와 같음, 빈 목록이면 0.0
 - [ ] **Step 2: 실패 확인** — `pytest tests/test_enhance.py tests/test_zerodce.py tests/test_timing.py -v` → FAIL
 - [ ] **Step 3: 구현** — Zero-DCE++의 preprocess = 패딩 + RGB 변환 + 텐서·GPU 전송, infer = `net(x)[0]`, postprocess = clamp·CPU·uint8·BGR·잘라내기. registry에 `zerodcepp` 빌더 추가
@@ -190,7 +190,7 @@
 **Interfaces:**
 - Produces:
   - `third_party_manifest.json`: `{"zerodce": {"url": "https://github.com/Li-Chongyi/Zero-DCE", "commit": "<고정>"}, "sci": {"url": "https://github.com/vis-opt-group/SCI", ...}, "ruas": {"url": "https://github.com/KarelZhang/RUAS", ...}, "nightenh": {"url": "https://github.com/jinyeying/night-enhancement", ...}}`. commit은 Step 5에서 `git ls-remote <url> HEAD`로 얻은 값을 적는다
-  - `scripts/fetch_third_party.py [--only NAME ...]`: 저장소마다 `third_party/<name>`에 clone 후 manifest의 commit으로 checkout. 이미 있고 commit이 같으면 건너뜀. Night-Enhancement 가중치(Dropbox)는 자동으로 받지 않고, 놓을 경로를 출력한다
+  - `scripts/fetch_third_party.py [--only NAME ...]`: 저장소마다 `third_party/<name>`에 clone 후 manifest의 commit으로 checkout. 이미 있고 commit이 같으면 건너뜀. Night-Enhancement 가중치(Dropbox)는 자동으로 받지 않고 놓을 경로를 출력한다
   - `load_symbol(repo_dir: Path, module: str, attr: str) -> Any` — `repo_dir`(하위 폴더 포함 가능, 예: `third_party/sci/CVPR`)를 sys.path 맨 앞에 잠깐 넣고 `module`을 import해 `attr`을 돌려준다. **import 동안 새로 생긴 sys.modules 항목은 끝나면 지운다**(다음 저장소의 같은 이름 모듈과 섞이지 않게). 폴더나 모듈이 없으면 `EnhancerUnavailable`
   - `commit_of(repo_dir: Path) -> str | None` — `run_meta.json`에 남길 실제 commit
 
@@ -232,7 +232,7 @@
 - Produces: `SCIEnhancer(repo_dir: Path, variant: str = "difficult", device=None)`, 조건 `sci`
   - 공식 `CVPR/test.py`와 같게: `Finetunemodel(weights_path)` (`load_symbol(repo/"CVPR", "model", "Finetunemodel")`), 가중치 `CVPR/weights/{variant}.pt`, variant ∈ {easy, medium, difficult}
   - 입력 RGB [0,1] (1,3,H,W), 정규화 없음. `forward`는 `(i, r)`을 돌려주고 **`r`(입력 / 조명, [0,1]로 자른 값)이 개선 결과**
-  - `Finetunemodel`은 가중치 키를 걸러서 로드하므로 키가 하나도 맞지 않아도 오류가 나지 않는다 → 래퍼에서 `torch.load`한 키와 모델 키가 **하나 이상 겹치고 모델 키가 전부 채워졌는지** 직접 확인하고, 아니면 `EnhancerUnavailable`
+  - `Finetunemodel`은 가중치 키를 걸러서 로드하므로 키가 하나도 맞지 않아도 오류가 나지 않는다 → 래퍼에서 `torch.load`한 키와 모델 키가 **하나 이상 겹치고 모델 키가 전부 채워졌는지** 직접 확인하고 아니면 `EnhancerUnavailable`
 
 - [ ] **Step 1: 실패하는 테스트 작성** — 있을 때만 `test_contract`, `test_brightens_dark_image`, `test_all_model_keys_loaded`; 잘못된 variant(`"night"`) → `ValueError`; 없을 때 `test_missing_raises_unavailable`
 - [ ] **Step 2~4: 실패 확인 → 구현 → 통과 확인 (사용자 PC, skip 아님)** — `pytest tests/test_sci.py -v`
@@ -361,7 +361,7 @@
   - 흐름: 데이터셋마다 표본 추출 → 이미지 읽기·리사이즈(박스 같이) → 조건마다 워밍업 10회 → 이미지마다 `enhance_timed` 1회 → IQA(DarkDriving은 리사이즈한 `ref_path` 이미지로 FR 포함) → 탐지 설정 4개 각각 탐지·매칭
   - **이미지 제외 규칙:** 어떤 조건에서든 한 이미지가 실패하면(예: GPU 메모리 부족), 그 이미지를 **그 데이터셋의 모든 조건 집계에서** 뺀다. 그래서 집계는 모든 조건을 다 돈 뒤 마지막에 한다
   - 조건마다 시작할 때 `reset_gpu_peak()`, 끝날 때 `gpu_peak_mb()`
-  - GPU 메모리 부족(`torch.cuda.OutOfMemoryError`)이면 `torch.cuda.empty_cache()` 후 한 번 다시 시도하고, 또 실패하면 위 제외 규칙을 따른다. (스펙 8장의 "타일 처리 재시도"는 쓰지 않는다: 긴 변 1280 제한으로 메모리 부족 가능성이 낮고, 곡선·조명 추정 모델은 타일 경계에서 결과가 달라진다. 이 변경을 work_history에 기록)
+  - GPU 메모리 부족(`torch.cuda.OutOfMemoryError`)이면 `torch.cuda.empty_cache()` 후 한 번 다시 시도하고 또 실패하면 위 제외 규칙을 따른다. (스펙 8장의 "타일 처리 재시도"는 쓰지 않는다: 긴 변 1280 제한으로 메모리 부족 가능성이 낮고 곡선·조명 추정 모델은 타일 경계에서 결과가 달라진다. 이 변경을 work_history에 기록)
   - CLI 옵션 `--check`: 데이터셋 경로·탐지 가중치·third_party 폴더와 가중치·pyiqa·CUDA 상태를 표로 출력하고 실험 없이 끝낸다
 
 - [ ] **Step 1: 실패하는 테스트 작성** (가짜 탐지기 2개 `name`이 다른 OracleDetector, `imgsz` 속성 포함, 가짜 IQA)

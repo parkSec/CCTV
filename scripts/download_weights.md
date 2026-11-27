@@ -1,6 +1,6 @@
 # 가중치 받기
 
-경로는 `configs/default.yaml`과 같아야 합니다. 가중치가 없는 조건은 실험에서 건너뛰고, 이유가 `run_meta.json`의 `skipped_conditions`에 남습니다. `python -m scripts.run_experiment --check`로 한 번에 확인할 수 있습니다.
+경로는 `configs/default.yaml`과 같아야 합니다. 가중치가 없는 조건은 실험에서 건너뛰고 이유가 `run_meta.json`의 `skipped_conditions`에 남습니다. `python -m scripts.run_experiment --check`로 한 번에 확인할 수 있습니다.
 
 ## 탐지 모델
 

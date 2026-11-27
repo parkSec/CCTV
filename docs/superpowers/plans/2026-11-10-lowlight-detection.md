@@ -2,9 +2,9 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** BDD100K 야간·ExDark 이미지에 Gamma/CLAHE/Zero-DCE++/Real-ESRGAN을 적용하고, 같은 YOLO26 탐지기·같은 평가 조건으로 정확도와 처리 시간을 비교하는 배치 실험 + Streamlit 뷰어를 만든다.
+**Goal:** BDD100K 야간·ExDark 이미지에 Gamma/CLAHE/Zero-DCE++/Real-ESRGAN을 적용하고 같은 YOLO26 탐지기·같은 평가 조건으로 정확도와 처리 시간을 비교하는 배치 실험 + Streamlit 뷰어를 만든다.
 
-**Architecture:** 구조 A. `src/`의 독립 단위(data / enhance / detect / eval / timing / io)를 `scripts/run_experiment.py`가 조합해 `results/<run_id>/`에 CSV·JSON을 쓴다. 웹 화면은 저장된 결과만 읽고, 단일 이미지·영상 데모만 즉석 처리한다.
+**Architecture:** 구조 A. `src/`의 독립 단위(data / enhance / detect / eval / timing / io)를 `scripts/run_experiment.py`가 조합해 `results/<run_id>/`에 CSV·JSON을 쓴다. 웹 화면은 저장된 결과만 읽고 단일 이미지·영상 데모만 즉석 처리한다.
 
 **Tech Stack:** Python 3.10+, numpy, OpenCV, PyYAML, pandas, pytest / PyTorch(CUDA), ultralytics(YOLO26), realesrgan(+basicsr) / Streamlit, matplotlib
 
@@ -15,7 +15,7 @@
 - 공통 클래스 순서 고정: `["person", "bicycle", "car", "motorcycle", "bus", "truck"]` (id 0~5)
 - COCO → 공통: `{0:0, 1:1, 2:2, 3:3, 5:4, 7:5}`, 그 외 COCO 클래스는 버린다
 - 표본: 데이터셋마다 `num_samples: 300`, `seed: 42`, 모든 조건이 같은 이미지 목록 사용
-- 탐지기: `yolo26s.pt`, `imgsz=640`. 탐지는 `conf_min=0.001`로 받고, P/R/F1은 `conf_eval=0.25` 이상만 사용, AP@0.5는 전체 점수 범위
+- 탐지기: `yolo26s.pt`, `imgsz=640`. 탐지는 `conf_min=0.001`로 받고 P/R/F1은 `conf_eval=0.25` 이상만 사용, AP@0.5는 전체 점수 범위
 - 매칭: 같은 클래스 + IoU ≥ 0.5, 점수 내림차순 그리디, 정답 하나당 한 번
 - Enhancer 입출력: BGR uint8, 출력 크기 == 입력 크기
 - 시간: 워밍업 5회, CUDA 사용 구간은 측정 전후 동기화, 이미지 읽기·저장 제외, 평균+중앙값(ms)
@@ -26,7 +26,7 @@
 ## Review Focus
 
 1. **BDD100K 라벨 버전 차이** — 2018 원본 라벨(`person`, `bike`, `motor`)과 det_20 라벨(`pedestrian`, `bicycle`, `motorcycle`)이 모두 들어올 수 있다. 둘 다 같은 공통 클래스로 매핑되어야 한다 → Task 2에 테스트.
-2. **라벨이 하나도 없는 이미지** — BDD 항목에 `labels` 키가 없거나, 표본 이미지에 평가 클래스 박스가 0개인 경우. 크래시 없이 GT 0개로 처리하고, 그 이미지의 탐지는 전부 FP여야 한다 → Task 2, Task 4에 테스트.
+2. **라벨이 하나도 없는 이미지** — BDD 항목에 `labels` 키가 없거나, 표본 이미지에 평가 클래스 박스가 0개인 경우. 크래시 없이 GT 0개로 처리하고 그 이미지의 탐지는 전부 FP여야 한다 → Task 2, Task 4에 테스트.
 3. **ExDark 파일 확장자 대소문자** — `xxx.JPG`, `xxx.jpeg`, `xxx.png` 혼재, 라벨 파일은 `<이미지 파일명>.txt`. 확장자 대소문자가 달라도 짝이 맞아야 한다 → Task 3에 테스트.
 4. **데이터셋에 없는 클래스의 탐지** — ExDark에서 YOLO가 truck을 찾은 경우 FP로 세지 않고 집계에서 뺀다 → Task 4에 테스트.
 5. **이미지 읽기 실패 / 가중치 없음** — 깨진 이미지는 제외 목록에 기록하고 진행, 가중치 없는 조건은 건너뛰고 `run_meta.json`의 `skipped_conditions`에 이유 기록 → Task 7에 테스트.

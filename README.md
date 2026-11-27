@@ -1,7 +1,7 @@
 # 야간 도로 영상 화질 개선 × 객체 탐지 비교
 
 어두운 도로 영상을 먼저 밝게 만들면 객체 탐지가 더 잘 되는지 실험으로 확인하는 프로젝트입니다.
-화질 개선 조건 8개(원본 포함)를 같은 이미지, 같은 탐지기로 비교하고, 처리 시간·탐지 정확도·화질 지표를 함께 잽니다.
+화질 개선 조건 8개(원본 포함)를 같은 이미지, 같은 탐지기로 비교하고 처리 시간·탐지 정확도·화질 지표를 함께 잽니다.
 
 | 문서 | 내용 |
 |---|---|
@@ -136,12 +136,12 @@ python -c "import torch; print(torch.cuda.is_available())"
 | ACDC | [acdc.vision.ee.ethz.ch](https://acdc.vision.ee.ethz.ch)에서 `gt_detection_trainval.zip`, `rgb_anon_trainvaltest.zip`을 받아 풂 | `datasets/ACDC/` (`gt_detection/`, `rgb_anon/`) |
 | DarkDriving | [DarkDriving-ICRA-2026](https://github.com/DriveMindLab/DarkDriving-ICRA-2026) 안내에 따라 `darkdriving_det.zip`을 받아 풂 | `datasets/DarkDriving/Det_data/` |
 
-ExDark는 Google Drive 다운로드 횟수 제한으로 실패하면, [공식 GitHub](https://github.com/cs-chan/Exclusively-Dark-Image-Dataset) 안내의 링크에서 zip 두 개를 직접 받은 뒤 이렇게 실행합니다.
+ExDark는 Google Drive 다운로드 횟수 제한으로 실패하면 [공식 GitHub](https://github.com/cs-chan/Exclusively-Dark-Image-Dataset) 안내의 링크에서 zip 두 개를 직접 받은 뒤 이렇게 실행합니다.
 ```bash
 python -m scripts.download_exdark --images-zip 이미지.zip --annos-zip 라벨.zip
 ```
 
-데이터셋 폴더가 없으면 실험에서 그 데이터셋만 건너뛰고, 이유가 결과 파일에 남습니다.
+데이터셋 폴더가 없으면 실험에서 그 데이터셋만 건너뛰고 이유가 결과 파일에 남습니다.
 
 ### 3-3. 모델 받기
 
@@ -249,7 +249,7 @@ CCTV/
 
 ### 출처와 라이선스
 
-- **개선 모델:** Zero-DCE(Guo et al., CVPR 2020), Zero-DCE++(Li et al., TPAMI 2021), SCI(Ma et al., CVPR 2022), RUAS(Liu et al., CVPR 2021), Night-Enhancement(Jin et al., ECCV 2022). 각 공식 저장소의 라이선스를 따르며, Zero-DCE 계열은 비상업적 연구 목적으로만 사용할 수 있습니다.
+- **개선 모델:** Zero-DCE(Guo et al., CVPR 2020), Zero-DCE++(Li et al., TPAMI 2021), SCI(Ma et al., CVPR 2022), RUAS(Liu et al., CVPR 2021), Night-Enhancement(Jin et al., ECCV 2022). 각 공식 저장소의 라이선스를 따르며 Zero-DCE 계열은 비상업적 연구 목적으로만 사용할 수 있습니다.
 - **전통 기법:** HE, CLAHE, AGCWD(Huang et al., TIP 2013), MSRCR(Jobson et al., TIP 1997), LIME(Guo et al., TIP 2017), Dong(ICME 2011), BIMEF(Ying et al., 2017). 논문 식을 보고 직접 구현했습니다(`src/enhance/traditional.py`).
 - **데이터셋:** BDD100K(Yu et al., CVPR 2020, Hugging Face 재배포본 `dgural/bdd100k`), ExDark(Loh & Chan, CVIU 2019), ACDC(Sakaridis et al., ICCV 2021, 비상업 연구용), DarkDriving(Wang et al., ICRA 2026, 학술·비상업 용도).
 - **탐지 모델:** Ultralytics YOLO26 (AGPL-3.0), BDD100K 학습 가중치 `dronefreak/bdd100k-yolo26s`, `-yolo26m`.
