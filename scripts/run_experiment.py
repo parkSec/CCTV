@@ -390,7 +390,8 @@ def main(argv=None):
     if args.datasets:
         for name, c in cfg["datasets"].items():
             c["enabled"] = name in args.datasets
-    run_experiment(cfg)
+    # 폴더 이름만 보고 어떤 실험인지 알 수 있게: <시각>_<설정 파일 이름>_<장수>
+    run_experiment(cfg, run_id=f"{datetime.now():%Y%m%d-%H%M%S}_{Path(args.config).stem}_{cfg['num_samples']}")
 
 
 if __name__ == "__main__":

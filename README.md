@@ -64,7 +64,7 @@ BDD100K로 학습된 YOLO26s·YOLO26m(Hugging Face `dronefreak/bdd100k-yolo26s`,
 
 ## 2. 결과 요약
 
-> 전체 표와 분석은 [RESULTS_enhancement.md](RESULTS_enhancement.md)에 있습니다. (실험 번호 `20261117-230804`)
+> 전체 표와 분석은 [RESULTS_enhancement.md](RESULTS_enhancement.md)에 있습니다. (실험 번호 `20261117-230804_default_300`)
 
 **실시간 기준 안에 들면서 탐지를 확실히 올리는 개선 방법은 없었습니다.**
 
@@ -84,7 +84,7 @@ BDD100K로 학습된 YOLO26s·YOLO26m(Hugging Face `dronefreak/bdd100k-yolo26s`,
 
 ### 전통 기법 비교
 
-> 전체 표와 분석은 [RESULTS_traditional.md](RESULTS_traditional.md)에 있습니다. (실험 번호 `20261127-115620`)
+> 전체 표와 분석은 [RESULTS_traditional.md](RESULTS_traditional.md)에 있습니다. (실험 번호 `20261127-115620_traditional_300`)
 
 전통 기법 8개를 같은 조건으로 비교한 결과입니다(평균 ΔAP50, yolo26s 640).
 
@@ -187,7 +187,7 @@ python -m scripts.run_experiment --config configs/traditional_sweep.yaml
 
 ### 3-5. 결과 파일
 
-실행할 때마다 `results/<날짜-시간>/` 폴더가 하나씩 생깁니다.
+실행할 때마다 `results/<날짜-시간>_<설정 이름>_<장수>/` 폴더가 하나씩 생깁니다(예: `20261127-115620_traditional_300`).
 
 | 파일 | 내용 |
 |---|---|
