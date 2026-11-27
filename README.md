@@ -6,9 +6,9 @@
 | 문서 | 내용 |
 |---|---|
 | **README.md** (이 문서) | 프로젝트 소개, 설치와 실행 방법 |
-| [**RESULTS_enhancement.md**](RESULTS_enhancement.md) | 현재 실험(개선 모델 7개 × 데이터셋 4개) 결과, 분석, 한계 |
-| [**RESULTS_traditional.md**](RESULTS_traditional.md) | 전통 기법 8개 비교와 파라미터 비교 결과 |
-| [RESULTS.md](RESULTS.md) · [RESULTS_summary.pdf](RESULTS_summary.pdf) | 1차 실험(COCO YOLO26s, 데이터셋 2개) 기록 |
+| [**reports/3_전통기법/**](reports/3_전통기법/) | 전통 기법 8개 비교와 파라미터 비교 (문서, PDF) |
+| [**reports/2_딥러닝_개선모델/**](reports/2_딥러닝_개선모델/) | 딥러닝 개선 모델 5개 비교 (개선 모델 7개 × 데이터셋 4개) |
+| [reports/1_초기실험_COCO/](reports/1_초기실험_COCO/) | 1차 실험(COCO YOLO26s, 데이터셋 2개) 기록과 요약 PDF |
 | [docs/](docs/) | 설계 문서, 구현 계획 |
 
 **목차**
@@ -64,7 +64,7 @@ BDD100K로 학습된 YOLO26s·YOLO26m(Hugging Face `dronefreak/bdd100k-yolo26s`,
 
 ## 2. 결과 요약
 
-> 전체 표와 분석은 [RESULTS_enhancement.md](RESULTS_enhancement.md)에 있습니다. (실험 번호 `20261117-230804_default_300`)
+> 전체 표와 분석은 [reports/2_딥러닝_개선모델](reports/2_딥러닝_개선모델/)에 있습니다. (실험 번호 `20261117-230804_default_300`)
 
 **실시간 기준 안에 들면서 탐지를 확실히 올리는 개선 방법은 없었습니다.**
 
@@ -84,7 +84,7 @@ BDD100K로 학습된 YOLO26s·YOLO26m(Hugging Face `dronefreak/bdd100k-yolo26s`,
 
 ### 전통 기법 비교
 
-> 전체 표와 분석은 [RESULTS_traditional.md](RESULTS_traditional.md)에 있습니다. (실험 번호 `20261127-115620_traditional_300`)
+> 전체 표와 분석은 [reports/3_전통기법](reports/3_전통기법/)에 있습니다. (실험 번호 `20261127-115620_traditional_300`)
 
 전통 기법 8개를 같은 조건으로 비교한 결과입니다(평균 ΔAP50, yolo26s 640).
 
@@ -218,9 +218,10 @@ python -m scripts.compare_frame --input 영상.mp4 --frame 120 --out results/com
 ```
 CCTV/
 ├─ README.md                  # 소개, 설치·실행 방법 (이 문서)
-├─ RESULTS_enhancement.md     # 현재 실험 결과와 분석
-├─ RESULTS_traditional.md     # 전통 기법 비교 결과
-├─ RESULTS.md                 # 1차 실험 기록
+├─ reports/                   # 실험별 결과 문서 (폴더마다 README.md)
+│   ├─ 1_초기실험_COCO/        # 1차 실험 기록, 요약 PDF
+│   ├─ 2_딥러닝_개선모델/      # 딥러닝 개선 모델 비교
+│   └─ 3_전통기법/             # 전통 기법 비교, 파라미터 비교, PDF
 ├─ configs/
 │   ├─ default.yaml           # 실험 조건 (데이터셋 경로, 표본 수, 탐지 설정, 개선 조건)
 │   ├─ ruas_variants.yaml     # RUAS 가중치 비교 (default.yaml을 물려받음)

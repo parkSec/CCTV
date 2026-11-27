@@ -1,6 +1,6 @@
 # 전통 화질 개선 기법 비교 결과
 
-학습이 필요 없는 전통 기법 8개를 야간 차량 이미지에 적용해 원본과 탐지 정확도·처리 시간·화질 지표를 비교한 결과입니다. 데이터셋, 탐지 모델, 지표는 딥러닝 모델을 비교한 [RESULTS_enhancement.md](RESULTS_enhancement.md)와 같습니다. 그래서 두 문서의 숫자는 바로 비교할 수 있습니다. 딥러닝 개선 모델은 다른 팀원이 맡았으므로 이 실험에서는 돌리지 않았습니다.
+학습이 필요 없는 전통 기법 8개를 야간 차량 이미지에 적용해 원본과 탐지 정확도·처리 시간·화질 지표를 비교한 결과입니다. 데이터셋, 탐지 모델, 지표는 딥러닝 모델을 비교한 [딥러닝 비교 문서](../2_딥러닝_개선모델/)와 같습니다. 그래서 두 문서의 숫자는 바로 비교할 수 있습니다. 딥러닝 개선 모델은 다른 팀원이 맡았으므로 이 실험에서는 돌리지 않았습니다.
 
 ## 1. 요약
 
@@ -34,7 +34,7 @@ Gamma와 CLAHE는 1차 실험과 같은 구현입니다. 나머지 6개는 `src/
 
 ### 2.2 데이터셋·탐지 모델·지표
 
-[RESULTS_enhancement.md](RESULTS_enhancement.md) 2.2~2.4절과 같습니다.
+[딥러닝 비교 문서](../2_딥러닝_개선모델/) 2.2~2.4절과 같습니다.
 
 - **데이터셋:** BDD100K 야간, ExDark, ACDC 야간, DarkDriving을 각각 300장(seed 42) 썼습니다.
 - **탐지 모델:** BDD100K로 학습한 YOLO26s·YOLO26m을 입력 640·960으로 돌렸습니다. 기준 설정은 yolo26s 640입니다.
@@ -63,7 +63,7 @@ Gamma와 CLAHE는 1차 실험과 같은 구현입니다. 나머지 6개는 `src/
 | HE | -0.148 | -0.087 | -0.026 | -0.090 | -0.0878 |
 
 - ExDark에서는 8개 모두 떨어졌습니다. ExDark는 원본 AP50이 0.588로 이미 높고 실내·실외가 섞인 일반 사진이라 밝기 보정의 이득이 적었습니다.
-- BDD100K에서는 많이 밝히는 기법(LIME, HE, Dong)이 −0.12 ~ −0.16 떨어졌습니다. 탐지기가 BDD100K 야간 이미지로 학습한 모델이라 이미지가 학습 때 본 모습에서 멀어지면 손해가 큽니다([RESULTS_enhancement.md](RESULTS_enhancement.md) 7장의 가설과 같은 방향).
+- BDD100K에서는 많이 밝히는 기법(LIME, HE, Dong)이 −0.12 ~ −0.16 떨어졌습니다. 탐지기가 BDD100K 야간 이미지로 학습한 모델이라 이미지가 학습 때 본 모습에서 멀어지면 손해가 큽니다([딥러닝 비교 문서](../2_딥러닝_개선모델/) 7장의 가설과 같은 방향).
 - 원본에서 탐지가 가장 어려운 ACDC와 DarkDriving에서는 차이가 작거나 약한 기법이 조금 올랐습니다.
 
 ### 3.2 탐지 설정별 평균 AP50 변화 (4개 데이터셋 평균)
@@ -332,7 +332,7 @@ HE, MSRCR, LIME, Dong은 4개 탐지 설정 모두에서 평균 ΔAP50이 −0.0
 - **보정 세기:** ExDark는 약한 보정, DarkDriving은 센 보정에서 좋았습니다. 이미지 밝기에 따라 세기를 바꾸는 방식(예: 평균 밝기로 γ 정하기)을 따로 실험해 볼 수 있습니다.
 - **LIME:** BM3D 잡음 제거를 뺀 구현입니다. 잡음 제거를 넣으면 LIME 결과는 나아질 수 있지만 그만큼 더 느려집니다.
 - **처리 시간:** Python·CPU 구현 기준입니다. LIME과 BIMEF는 C++나 GPU 구현에서 훨씬 빠를 수 있습니다.
-- **탐지기:** BDD100K 학습 탐지기 한 계열만 썼고 평균 AP50 차이 0.005 정도는 데이터셋 하나로 쉽게 뒤집히는 크기입니다. [RESULTS_enhancement.md](RESULTS_enhancement.md) 8장과 같습니다.
+- **탐지기:** BDD100K 학습 탐지기 한 계열만 썼고 평균 AP50 차이 0.005 정도는 데이터셋 하나로 쉽게 뒤집히는 크기입니다. [딥러닝 비교 문서](../2_딥러닝_개선모델/) 8장과 같습니다.
 
 ## 7. 재현
 
@@ -350,4 +350,4 @@ python -m scripts.analyze results/<run_id>
 - **LIME:** Guo, Li, Ling, "LIME: Low-Light Image Enhancement via Illumination Map Estimation", IEEE TIP 2017.
 - **Dong:** Dong et al., "Fast Efficient Algorithm for Enhancement of Low Lighting Video", ICME 2011.
 - **BIMEF:** Ying, Li, Gao, "A Bio-Inspired Multi-Exposure Fusion Framework for Low-light Image Enhancement", arXiv:1711.00591, 2017.
-- **데이터셋·탐지 모델·화질 지표:** [RESULTS_enhancement.md](RESULTS_enhancement.md) 10장과 같습니다.
+- **데이터셋·탐지 모델·화질 지표:** [딥러닝 비교 문서](../2_딥러닝_개선모델/) 10장과 같습니다.
