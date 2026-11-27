@@ -13,6 +13,6 @@ conditions:
     tile_grid: 8
     sweep:
       clip_limit: [1.0, 2.0, 4.0]
-  - type: agcwd            # 작을수록 어두운 쪽 감마 보정이 강함
+  - type: agcwd            # 클수록 더 밝게 보정함 (원본 평균 밝기 44 → α0.25: 66, α0.75: 83)
     sweep:
       alpha: [0.25, 0.5, 0.75]
