@@ -98,3 +98,22 @@ def test_ruas_variants_config():
 def test_ruas_uses_upe_weights():
     cfg = load_config(DEFAULT)
     assert next(c for c in cfg["conditions"] if c["type"] == "ruas")["variant"] == "upe"
+
+
+def test_traditional_config_has_only_traditional_methods():
+    cfg = load_config(PROJECT_ROOT / "configs" / "traditional.yaml")
+    assert [c["type"] for c in cfg["conditions"]] == [
+        "original", "gamma", "clahe", "he", "agcwd", "msrcr", "lime", "dong", "bimef"]
+    # 데이터셋·탐지 모델·지표는 default.yaml과 같다 (팀원 모델 결과와 같은 기준으로 비교)
+    base = load_config(DEFAULT)
+    for key in ["seed", "num_samples", "datasets", "detectors", "detection", "iqa", "preprocess"]:
+        assert cfg[key] == base[key], key
+
+
+def test_traditional_config_builds_without_skips():
+    from src.enhance.registry import build_enhancers
+    cfg = load_config(PROJECT_ROOT / "configs" / "traditional.yaml")
+    enhancers, skipped = build_enhancers(cfg["conditions"])
+    assert skipped == []
+    assert [e.name for e in enhancers] == [
+        "original", "gamma_g1.5", "clahe_c2.0", "he", "agcwd_a0.5", "msrcr", "lime", "dong", "bimef"]

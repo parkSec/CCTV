@@ -3,6 +3,7 @@
 # Keep this file ASCII-only: pip on Korean Windows reads it as cp949.
 numpy
 opencv-python
+scipy>=1.12        # LIME, BIMEF (sparse CG solver, rtol argument)
 PyYAML
 pandas
 matplotlib

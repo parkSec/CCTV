@@ -1,0 +1,18 @@
+# 전통 기법(학습 없음)만 비교하는 설정. 데이터셋·탐지 모델·지표는 default.yaml과 같다.
+# 딥러닝 개선 모델은 다른 팀원이 맡으므로 여기서는 돌리지 않는다 (default.yaml에는 그대로 남아 있음).
+# 실행: python -m scripts.run_experiment --config configs/traditional.yaml
+base: default.yaml
+conditions:
+  - type: original
+  - type: gamma            # 고정 감마 곡선
+    gamma: 1.5
+  - type: clahe            # 칸별 대비 제한 평활화 (LAB의 L)
+    clip_limit: 2.0
+    tile_grid: 8
+  - type: he               # 전역 히스토그램 평활화 (LAB의 L). CLAHE 비교용 기준선
+  - type: agcwd            # Huang 외, IEEE TIP 2013. 이미지마다 감마 곡선을 자동으로 정함
+    alpha: 0.5
+  - type: msrcr            # Jobson 외, IEEE TIP 1997. 여러 크기 블러로 조명을 빼는 Retinex
+  - type: lime             # Guo 외, IEEE TIP 2017. 조명 지도 추정 후 나눔 (BM3D 잡음 제거 제외)
+  - type: dong             # Dong 외, ICME 2011. 반전 → 안개 제거 → 반전
+  - type: bimef            # Ying 외, arXiv 2017. 노출 비율을 바꾼 사진과 섞음

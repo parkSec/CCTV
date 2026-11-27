@@ -9,6 +9,14 @@ from src.config import PROJECT_ROOT
 from .base import Enhancer, EnhancerUnavailable, IdentityEnhancer
 from .clahe import ClaheEnhancer
 from .gamma import GammaEnhancer
+from .traditional import (
+    AgcwdEnhancer,
+    BimefEnhancer,
+    DongEnhancer,
+    HistEqEnhancer,
+    LimeEnhancer,
+    MsrcrEnhancer,
+)
 
 
 def _build_zerodcepp(cond: dict) -> Enhancer:
@@ -40,6 +48,10 @@ def _build_nightenh(cond: dict, root: Path) -> Enhancer:
     return NightEnhEnhancer(_repo(cond, root), cond.get("variant", "delighteffects"), device=cond.get("device"))
 
 
+def _kw(cond: dict, *keys: str) -> dict:
+    return {k: cond[k] for k in keys if k in cond}
+
+
 # third_party 저장소를 쓰는 빌더 (cond, third_party_root)
 REPO_BUILDERS = {"zerodce": _build_zerodce, "sci": _build_sci, "ruas": _build_ruas, "nightenh": _build_nightenh}
 
@@ -48,6 +60,13 @@ BUILDERS = {
     "gamma": lambda c: GammaEnhancer(c["gamma"]),
     "clahe": lambda c: ClaheEnhancer(c["clip_limit"], c.get("tile_grid", 8)),
     "zerodcepp": _build_zerodcepp,
+    # 전통 기법 (학습 없음). 설정에 적은 키만 넘기고 나머지는 클래스 기본값
+    "he": lambda c: HistEqEnhancer(),
+    "agcwd": lambda c: AgcwdEnhancer(c.get("alpha", 0.5)),
+    "msrcr": lambda c: MsrcrEnhancer(**_kw(c, "sigmas", "alpha", "beta", "clip")),
+    "lime": lambda c: LimeEnhancer(**_kw(c, "alpha", "gamma", "sigma")),
+    "dong": lambda c: DongEnhancer(**_kw(c, "omega", "patch", "t_min", "gf_radius", "gf_eps")),
+    "bimef": lambda c: BimefEnhancer(**_kw(c, "mu", "lam", "sigma", "k_range")),
 }
 
 
